@@ -6,7 +6,7 @@ root.withdraw()
 from slitra.slitra_window import MainWindow
 from slitra.slitra_controller import SlitraController
 from slitra.core import find_all_combinations, calculate_combination_details
-from slitra.app_info import VERSION
+from slitra.app_info import APP_VERSION as VERSION
 
 app = MainWindow()
 controller = SlitraController(app)
