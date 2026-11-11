@@ -1,0 +1,4936 @@
+[
+  {
+    "config": {
+      "coils": 3,
+      "width": 857,
+      "weights": [
+        5409,
+        9506,
+        9012
+      ],
+      "sizes": [
+        121
+      ],
+      "smin": 3,
+      "smax": 46,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1016,
+      "weights": [
+        5520,
+        5488,
+        6535
+      ],
+      "sizes": [
+        169
+      ],
+      "smin": 16,
+      "smax": 54,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 901,
+      "weights": [
+        13928,
+        11873,
+        8611
+      ],
+      "sizes": [
+        351,
+        192
+      ],
+      "smin": 0,
+      "smax": 48,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          2,
+          1
+        ],
+        "used_width": 894.0,
+        "scrap_mm": 7.0,
+        "scrap_pct": 0.776914539400666,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 89.12,
+        "scrap_total_kg": 267.35
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1016,
+      "weights": [
+        10574,
+        9552,
+        7547
+      ],
+      "sizes": [
+        440
+      ],
+      "smin": 10,
+      "smax": 16,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 849,
+      "weights": [
+        10881,
+        10635
+      ],
+      "sizes": [
+        463,
+        185,
+        72
+      ],
+      "smin": 14,
+      "smax": 48,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1138,
+      "weights": [
+        8733
+      ],
+      "sizes": [
+        487,
+        90
+      ],
+      "smin": 7,
+      "smax": 13,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1032,
+      "weights": [
+        10977,
+        7664
+      ],
+      "sizes": [
+        231,
+        157
+      ],
+      "smin": 8,
+      "smax": 52,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          5
+        ],
+        "used_width": 1016.0,
+        "scrap_mm": 16.0,
+        "scrap_pct": 1.550387596899225,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 144.5,
+        "scrap_total_kg": 289.01
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          3,
+          2
+        ],
+        "used_width": 1007.0,
+        "scrap_mm": 25.0,
+        "scrap_pct": 2.422480620155039,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 225.79,
+        "scrap_total_kg": 451.57
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1125,
+      "weights": [
+        7803,
+        13751,
+        9010
+      ],
+      "sizes": [
+        286
+      ],
+      "smin": 12,
+      "smax": 29,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          5
+        ],
+        "used_width": 1016.0,
+        "scrap_mm": 16.0,
+        "scrap_pct": 1.550387596899225,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 144.5,
+        "scrap_total_kg": 289.01
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          3,
+          2
+        ],
+        "used_width": 1007.0,
+        "scrap_mm": 25.0,
+        "scrap_pct": 2.422480620155039,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 225.79,
+        "scrap_total_kg": 451.57
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 966,
+      "weights": [
+        5916,
+        8752,
+        5525
+      ],
+      "sizes": [
+        255,
+        187
+      ],
+      "smin": 2,
+      "smax": 15,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          3,
+          1
+        ],
+        "used_width": 952.0,
+        "scrap_mm": 14.0,
+        "scrap_pct": 1.4492753623188406,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 97.55,
+        "scrap_total_kg": 292.65
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1135,
+      "weights": [
+        13179
+      ],
+      "sizes": [
+        379,
+        284
+      ],
+      "smin": 4,
+      "smax": 20,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1181,
+      "weights": [
+        14197
+      ],
+      "sizes": [
+        432,
+        349,
+        184
+      ],
+      "smin": 13,
+      "smax": 50,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          0,
+          4
+        ],
+        "used_width": 1168.0,
+        "scrap_mm": 13.0,
+        "scrap_pct": 1.100762066045724,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 156.28,
+        "scrap_total_kg": 156.28
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          1,
+          2
+        ],
+        "used_width": 1149.0,
+        "scrap_mm": 32.0,
+        "scrap_pct": 2.7095681625740897,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 384.68,
+        "scrap_total_kg": 384.68
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 912,
+      "weights": [
+        7266,
+        13348
+      ],
+      "sizes": [
+        436,
+        96
+      ],
+      "smin": 1,
+      "smax": 8,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 881,
+      "weights": [
+        11916,
+        14771,
+        6040
+      ],
+      "sizes": [
+        355,
+        245
+      ],
+      "smin": 14,
+      "smax": 47,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          2
+        ],
+        "used_width": 845.0,
+        "scrap_mm": 36.0,
+        "scrap_pct": 4.0862656072644725,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 445.77,
+        "scrap_total_kg": 1337.31
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1240,
+      "weights": [
+        5188,
+        6876,
+        13797
+      ],
+      "sizes": [
+        443,
+        378
+      ],
+      "smin": 10,
+      "smax": 17,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1267,
+      "weights": [
+        6743,
+        9889,
+        13317
+      ],
+      "sizes": [
+        241,
+        151,
+        128
+      ],
+      "smin": 5,
+      "smax": 39,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1249,
+      "weights": [
+        14295
+      ],
+      "sizes": [
+        93
+      ],
+      "smin": 15,
+      "smax": 19,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1137,
+      "weights": [
+        12787
+      ],
+      "sizes": [
+        320,
+        185,
+        134
+      ],
+      "smin": 19,
+      "smax": 46,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          2,
+          1,
+          2
+        ],
+        "used_width": 1093.0,
+        "scrap_mm": 44.0,
+        "scrap_pct": 3.8698328935795954,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 494.84,
+        "scrap_total_kg": 494.84
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          2,
+          3
+        ],
+        "used_width": 1092.0,
+        "scrap_mm": 45.0,
+        "scrap_pct": 3.95778364116095,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 506.08,
+        "scrap_total_kg": 506.08
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1186,
+      "weights": [
+        8295,
+        10107,
+        11537
+      ],
+      "sizes": [
+        382,
+        274,
+        241
+      ],
+      "smin": 16,
+      "smax": 44,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          2,
+          1,
+          2
+        ],
+        "used_width": 1093.0,
+        "scrap_mm": 44.0,
+        "scrap_pct": 3.8698328935795954,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 494.84,
+        "scrap_total_kg": 494.84
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          2,
+          3
+        ],
+        "used_width": 1092.0,
+        "scrap_mm": 45.0,
+        "scrap_pct": 3.95778364116095,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 506.08,
+        "scrap_total_kg": 506.08
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 915,
+      "weights": [
+        6049
+      ],
+      "sizes": [
+        351,
+        60
+      ],
+      "smin": 17,
+      "smax": 31,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          9
+        ],
+        "used_width": 891.0,
+        "scrap_mm": 24.0,
+        "scrap_pct": 2.622950819672131,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 158.66,
+        "scrap_total_kg": 158.66
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 836,
+      "weights": [
+        5964
+      ],
+      "sizes": [
+        84
+      ],
+      "smin": 1,
+      "smax": 22,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 921,
+      "weights": [
+        9562,
+        12953,
+        8510
+      ],
+      "sizes": [
+        420,
+        342,
+        117
+      ],
+      "smin": 18,
+      "smax": 48,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1213,
+      "weights": [
+        11669,
+        8119
+      ],
+      "sizes": [
+        99
+      ],
+      "smin": 13,
+      "smax": 35,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          12
+        ],
+        "used_width": 1188.0,
+        "scrap_mm": 25.0,
+        "scrap_pct": 2.061005770816158,
+        "total_strips": 12,
+        "scrap_per_coil_kg": 203.92,
+        "scrap_total_kg": 407.83
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1039,
+      "weights": [
+        5887,
+        6612
+      ],
+      "sizes": [
+        256
+      ],
+      "smin": 10,
+      "smax": 16,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          4
+        ],
+        "used_width": 1024.0,
+        "scrap_mm": 15.0,
+        "scrap_pct": 1.4436958614051971,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 90.22,
+        "scrap_total_kg": 180.45
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 897,
+      "weights": [
+        13786
+      ],
+      "sizes": [
+        266,
+        121
+      ],
+      "smin": 5,
+      "smax": 22,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1247,
+      "weights": [
+        6235
+      ],
+      "sizes": [
+        491,
+        463
+      ],
+      "smin": 17,
+      "smax": 23,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1076,
+      "weights": [
+        5241,
+        6528,
+        8872
+      ],
+      "sizes": [
+        258
+      ],
+      "smin": 15,
+      "smax": 45,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          4
+        ],
+        "used_width": 1032.0,
+        "scrap_mm": 44.0,
+        "scrap_pct": 4.089219330855019,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 281.35,
+        "scrap_total_kg": 844.06
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1262,
+      "weights": [
+        5960,
+        7697
+      ],
+      "sizes": [
+        249,
+        51
+      ],
+      "smin": 8,
+      "smax": 58,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          4,
+          5
+        ],
+        "used_width": 1251.0,
+        "scrap_mm": 11.0,
+        "scrap_pct": 0.8716323296354992,
+        "total_strips": 9,
+        "scrap_per_coil_kg": 59.52,
+        "scrap_total_kg": 119.04
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          5,
+          0
+        ],
+        "used_width": 1245.0,
+        "scrap_mm": 17.0,
+        "scrap_pct": 1.347068145800317,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 91.98,
+        "scrap_total_kg": 183.97
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          0,
+          24
+        ],
+        "used_width": 1224.0,
+        "scrap_mm": 38.0,
+        "scrap_pct": 3.011093502377179,
+        "total_strips": 24,
+        "scrap_per_coil_kg": 205.61,
+        "scrap_total_kg": 411.23
+      },
+      {
+        "rank": 4,
+        "qty_per_size": [
+          1,
+          19
+        ],
+        "used_width": 1218.0,
+        "scrap_mm": 44.0,
+        "scrap_pct": 3.4865293185419968,
+        "total_strips": 20,
+        "scrap_per_coil_kg": 238.08,
+        "scrap_total_kg": 476.16
+      },
+      {
+        "rank": 5,
+        "qty_per_size": [
+          2,
+          14
+        ],
+        "used_width": 1212.0,
+        "scrap_mm": 50.0,
+        "scrap_pct": 3.9619651347068143,
+        "total_strips": 16,
+        "scrap_per_coil_kg": 270.54,
+        "scrap_total_kg": 541.09
+      },
+      {
+        "rank": 6,
+        "qty_per_size": [
+          3,
+          9
+        ],
+        "used_width": 1206.0,
+        "scrap_mm": 56.0,
+        "scrap_pct": 4.437400950871632,
+        "total_strips": 12,
+        "scrap_per_coil_kg": 303.01,
+        "scrap_total_kg": 606.02
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1016,
+      "weights": [
+        14105,
+        12973
+      ],
+      "sizes": [
+        147
+      ],
+      "smin": 9,
+      "smax": 22,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1176,
+      "weights": [
+        13883,
+        5998,
+        10138
+      ],
+      "sizes": [
+        75
+      ],
+      "smin": 18,
+      "smax": 48,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1291,
+      "weights": [
+        13320
+      ],
+      "sizes": [
+        485
+      ],
+      "smin": 5,
+      "smax": 9,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1241,
+      "weights": [
+        8853,
+        11615,
+        6964
+      ],
+      "sizes": [
+        354,
+        346,
+        176
+      ],
+      "smin": 1,
+      "smax": 40,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1136,
+      "weights": [
+        14562,
+        14260
+      ],
+      "sizes": [
+        211,
+        183,
+        154
+      ],
+      "smin": 10,
+      "smax": 25,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          5,
+          0
+        ],
+        "used_width": 1126.0,
+        "scrap_mm": 10.0,
+        "scrap_pct": 0.8802816901408451,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 126.86,
+        "scrap_total_kg": 253.71
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          2,
+          3,
+          1
+        ],
+        "used_width": 1125.0,
+        "scrap_mm": 11.0,
+        "scrap_pct": 0.9683098591549295,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 139.54,
+        "scrap_total_kg": 279.09
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          3,
+          1,
+          2
+        ],
+        "used_width": 1124.0,
+        "scrap_mm": 12.0,
+        "scrap_pct": 1.056338028169014,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 152.23,
+        "scrap_total_kg": 304.46
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 867,
+      "weights": [
+        9915,
+        12491
+      ],
+      "sizes": [
+        434,
+        87
+      ],
+      "smin": 0,
+      "smax": 29,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1075,
+      "weights": [
+        8492
+      ],
+      "sizes": [
+        228,
+        185,
+        117
+      ],
+      "smin": 2,
+      "smax": 17,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          0,
+          2,
+          6
+        ],
+        "used_width": 1072.0,
+        "scrap_mm": 3.0,
+        "scrap_pct": 0.27906976744186046,
+        "total_strips": 8,
+        "scrap_per_coil_kg": 23.7,
+        "scrap_total_kg": 23.7
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          2,
+          4
+        ],
+        "used_width": 1066.0,
+        "scrap_mm": 9.0,
+        "scrap_pct": 0.8372093023255814,
+        "total_strips": 7,
+        "scrap_per_coil_kg": 71.1,
+        "scrap_total_kg": 71.1
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          2,
+          2,
+          2
+        ],
+        "used_width": 1060.0,
+        "scrap_mm": 15.0,
+        "scrap_pct": 1.3953488372093024,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 118.49,
+        "scrap_total_kg": 118.49
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1218,
+      "weights": [
+        14086,
+        9905,
+        6697
+      ],
+      "sizes": [
+        185
+      ],
+      "smin": 3,
+      "smax": 9,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 944,
+      "weights": [
+        14909,
+        8450
+      ],
+      "sizes": [
+        401,
+        225,
+        154
+      ],
+      "smin": 20,
+      "smax": 36,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          0,
+          0,
+          6
+        ],
+        "used_width": 924.0,
+        "scrap_mm": 20.0,
+        "scrap_pct": 2.11864406779661,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 247.45,
+        "scrap_total_kg": 494.89
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          0,
+          2,
+          3
+        ],
+        "used_width": 912.0,
+        "scrap_mm": 32.0,
+        "scrap_pct": 3.389830508474576,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 395.92,
+        "scrap_total_kg": 791.83
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1263,
+      "weights": [
+        5832,
+        6512
+      ],
+      "sizes": [
+        474,
+        266,
+        191
+      ],
+      "smin": 1,
+      "smax": 1,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1126,
+      "weights": [
+        9291
+      ],
+      "sizes": [
+        429
+      ],
+      "smin": 14,
+      "smax": 49,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 804,
+      "weights": [
+        6832,
+        6232,
+        7442
+      ],
+      "sizes": [
+        477,
+        239,
+        68
+      ],
+      "smin": 18,
+      "smax": 53,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 927,
+      "weights": [
+        6684,
+        10794,
+        14173
+      ],
+      "sizes": [
+        433,
+        367
+      ],
+      "smin": 4,
+      "smax": 19,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1251,
+      "weights": [
+        11755
+      ],
+      "sizes": [
+        141
+      ],
+      "smin": 10,
+      "smax": 60,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1242,
+      "weights": [
+        9065,
+        9371,
+        7608
+      ],
+      "sizes": [
+        496,
+        245,
+        105
+      ],
+      "smin": 1,
+      "smax": 31,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1218,
+      "weights": [
+        12541
+      ],
+      "sizes": [
+        470,
+        206
+      ],
+      "smin": 7,
+      "smax": 21,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 898,
+      "weights": [
+        11528,
+        10378,
+        9564
+      ],
+      "sizes": [
+        445
+      ],
+      "smin": 8,
+      "smax": 30,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          2
+        ],
+        "used_width": 890.0,
+        "scrap_mm": 8.0,
+        "scrap_pct": 0.8908685968819599,
+        "total_strips": 2,
+        "scrap_per_coil_kg": 93.45,
+        "scrap_total_kg": 280.36
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1231,
+      "weights": [
+        13785,
+        10425,
+        5452
+      ],
+      "sizes": [
+        499
+      ],
+      "smin": 8,
+      "smax": 19,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 855,
+      "weights": [
+        14774
+      ],
+      "sizes": [
+        423,
+        226
+      ],
+      "smin": 10,
+      "smax": 37,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1260,
+      "weights": [
+        14446,
+        8114
+      ],
+      "sizes": [
+        412,
+        72
+      ],
+      "smin": 13,
+      "smax": 13,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1020,
+      "weights": [
+        6146,
+        10409
+      ],
+      "sizes": [
+        484,
+        389,
+        210
+      ],
+      "smin": 3,
+      "smax": 49,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          0,
+          2,
+          1
+        ],
+        "used_width": 988.0,
+        "scrap_mm": 32.0,
+        "scrap_pct": 3.1372549019607843,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 259.69,
+        "scrap_total_kg": 519.37
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 958,
+      "weights": [
+        11691,
+        10344,
+        11592
+      ],
+      "sizes": [
+        333,
+        201,
+        115
+      ],
+      "smin": 6,
+      "smax": 32,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          0,
+          2,
+          1
+        ],
+        "used_width": 988.0,
+        "scrap_mm": 32.0,
+        "scrap_pct": 3.1372549019607843,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 259.69,
+        "scrap_total_kg": 519.37
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1183,
+      "weights": [
+        7851,
+        14324,
+        9930
+      ],
+      "sizes": [
+        476,
+        330
+      ],
+      "smin": 0,
+      "smax": 19,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1020,
+      "weights": [
+        14502
+      ],
+      "sizes": [
+        385,
+        288,
+        214
+      ],
+      "smin": 14,
+      "smax": 42,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 958,
+      "weights": [
+        8680,
+        8262,
+        7414
+      ],
+      "sizes": [
+        73
+      ],
+      "smin": 7,
+      "smax": 37,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          13
+        ],
+        "used_width": 949.0,
+        "scrap_mm": 9.0,
+        "scrap_pct": 0.9394572025052191,
+        "total_strips": 13,
+        "scrap_per_coil_kg": 76.27,
+        "scrap_total_kg": 228.81
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1012,
+      "weights": [
+        14431,
+        8185
+      ],
+      "sizes": [
+        406,
+        303,
+        246
+      ],
+      "smin": 12,
+      "smax": 27,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1152,
+      "weights": [
+        5090,
+        6746,
+        11965
+      ],
+      "sizes": [
+        140
+      ],
+      "smin": 16,
+      "smax": 45,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          8
+        ],
+        "used_width": 1120.0,
+        "scrap_mm": 32.0,
+        "scrap_pct": 2.7777777777777777,
+        "total_strips": 8,
+        "scrap_per_coil_kg": 220.38,
+        "scrap_total_kg": 661.14
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 927,
+      "weights": [
+        6988,
+        12478,
+        7184
+      ],
+      "sizes": [
+        391,
+        321
+      ],
+      "smin": 17,
+      "smax": 55,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1113,
+      "weights": [
+        13270,
+        11991
+      ],
+      "sizes": [
+        430,
+        278,
+        131
+      ],
+      "smin": 15,
+      "smax": 43,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          0,
+          3,
+          2
+        ],
+        "used_width": 1096.0,
+        "scrap_mm": 17.0,
+        "scrap_pct": 1.527403414195867,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 192.92,
+        "scrap_total_kg": 385.84
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          0,
+          5
+        ],
+        "used_width": 1085.0,
+        "scrap_mm": 28.0,
+        "scrap_pct": 2.515723270440252,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 317.75,
+        "scrap_total_kg": 635.5
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          0,
+          2,
+          4
+        ],
+        "used_width": 1080.0,
+        "scrap_mm": 33.0,
+        "scrap_pct": 2.964959568733154,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 374.49,
+        "scrap_total_kg": 748.98
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1230,
+      "weights": [
+        9543
+      ],
+      "sizes": [
+        370,
+        298,
+        172
+      ],
+      "smin": 8,
+      "smax": 36,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          2,
+          1,
+          1
+        ],
+        "used_width": 1210.0,
+        "scrap_mm": 20.0,
+        "scrap_pct": 1.6260162601626018,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 155.17,
+        "scrap_total_kg": 155.17
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 946,
+      "weights": [
+        8841,
+        9451,
+        10502
+      ],
+      "sizes": [
+        326,
+        91
+      ],
+      "smin": 4,
+      "smax": 13,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1155,
+      "weights": [
+        7503,
+        8505
+      ],
+      "sizes": [
+        262
+      ],
+      "smin": 13,
+      "smax": 34,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 831,
+      "weights": [
+        8388,
+        11883
+      ],
+      "sizes": [
+        444,
+        349
+      ],
+      "smin": 0,
+      "smax": 48,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          1
+        ],
+        "used_width": 793.0,
+        "scrap_mm": 38.0,
+        "scrap_pct": 4.57280385078219,
+        "total_strips": 2,
+        "scrap_per_coil_kg": 463.48,
+        "scrap_total_kg": 926.95
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 912,
+      "weights": [
+        9471,
+        12140
+      ],
+      "sizes": [
+        249,
+        64
+      ],
+      "smin": 10,
+      "smax": 52,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          0,
+          14
+        ],
+        "used_width": 896.0,
+        "scrap_mm": 16.0,
+        "scrap_pct": 1.7543859649122806,
+        "total_strips": 14,
+        "scrap_per_coil_kg": 189.57,
+        "scrap_total_kg": 379.14
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          10
+        ],
+        "used_width": 889.0,
+        "scrap_mm": 23.0,
+        "scrap_pct": 2.5219298245614032,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 272.51,
+        "scrap_total_kg": 545.01
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          2,
+          6
+        ],
+        "used_width": 882.0,
+        "scrap_mm": 30.0,
+        "scrap_pct": 3.289473684210526,
+        "total_strips": 8,
+        "scrap_per_coil_kg": 355.44,
+        "scrap_total_kg": 710.89
+      },
+      {
+        "rank": 4,
+        "qty_per_size": [
+          3,
+          2
+        ],
+        "used_width": 875.0,
+        "scrap_mm": 37.0,
+        "scrap_pct": 4.057017543859649,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 438.38,
+        "scrap_total_kg": 876.76
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 884,
+      "weights": [
+        12657,
+        7091,
+        13751
+      ],
+      "sizes": [
+        251
+      ],
+      "smin": 18,
+      "smax": 54,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          0,
+          14
+        ],
+        "used_width": 896.0,
+        "scrap_mm": 16.0,
+        "scrap_pct": 1.7543859649122806,
+        "total_strips": 14,
+        "scrap_per_coil_kg": 189.57,
+        "scrap_total_kg": 379.14
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          10
+        ],
+        "used_width": 889.0,
+        "scrap_mm": 23.0,
+        "scrap_pct": 2.5219298245614032,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 272.51,
+        "scrap_total_kg": 545.01
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          2,
+          6
+        ],
+        "used_width": 882.0,
+        "scrap_mm": 30.0,
+        "scrap_pct": 3.289473684210526,
+        "total_strips": 8,
+        "scrap_per_coil_kg": 355.44,
+        "scrap_total_kg": 710.89
+      },
+      {
+        "rank": 4,
+        "qty_per_size": [
+          3,
+          2
+        ],
+        "used_width": 875.0,
+        "scrap_mm": 37.0,
+        "scrap_pct": 4.057017543859649,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 438.38,
+        "scrap_total_kg": 876.76
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1129,
+      "weights": [
+        12022
+      ],
+      "sizes": [
+        493
+      ],
+      "smin": 14,
+      "smax": 25,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 994,
+      "weights": [
+        10363,
+        8467
+      ],
+      "sizes": [
+        222,
+        217
+      ],
+      "smin": 12,
+      "smax": 29,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1227,
+      "weights": [
+        6341,
+        12705
+      ],
+      "sizes": [
+        433
+      ],
+      "smin": 17,
+      "smax": 20,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1132,
+      "weights": [
+        6124
+      ],
+      "sizes": [
+        436,
+        70,
+        65
+      ],
+      "smin": 7,
+      "smax": 19,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          7,
+          3
+        ],
+        "used_width": 1121.0,
+        "scrap_mm": 11.0,
+        "scrap_pct": 0.9717314487632509,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 59.51,
+        "scrap_total_kg": 59.51
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          6,
+          4
+        ],
+        "used_width": 1116.0,
+        "scrap_mm": 16.0,
+        "scrap_pct": 1.4134275618374559,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 86.56,
+        "scrap_total_kg": 86.56
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 878,
+      "weights": [
+        8908,
+        7068,
+        12758
+      ],
+      "sizes": [
+        338,
+        161,
+        108
+      ],
+      "smin": 14,
+      "smax": 58,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          7,
+          3
+        ],
+        "used_width": 1121.0,
+        "scrap_mm": 11.0,
+        "scrap_pct": 0.9717314487632509,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 59.51,
+        "scrap_total_kg": 59.51
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          6,
+          4
+        ],
+        "used_width": 1116.0,
+        "scrap_mm": 16.0,
+        "scrap_pct": 1.4134275618374559,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 86.56,
+        "scrap_total_kg": 86.56
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 813,
+      "weights": [
+        10111,
+        14433,
+        11149
+      ],
+      "sizes": [
+        416,
+        151
+      ],
+      "smin": 2,
+      "smax": 39,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1156,
+      "weights": [
+        9941
+      ],
+      "sizes": [
+        462,
+        357,
+        111
+      ],
+      "smin": 18,
+      "smax": 68,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1072,
+      "weights": [
+        12018,
+        11071
+      ],
+      "sizes": [
+        309
+      ],
+      "smin": 20,
+      "smax": 41,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1221,
+      "weights": [
+        13031,
+        6729
+      ],
+      "sizes": [
+        375,
+        235
+      ],
+      "smin": 14,
+      "smax": 59,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 890,
+      "weights": [
+        13548,
+        9425
+      ],
+      "sizes": [
+        463,
+        446,
+        325
+      ],
+      "smin": 15,
+      "smax": 44,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1103,
+      "weights": [
+        9397,
+        10280,
+        9022
+      ],
+      "sizes": [
+        192
+      ],
+      "smin": 14,
+      "smax": 29,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1112,
+      "weights": [
+        11209,
+        10511,
+        5470
+      ],
+      "sizes": [
+        485,
+        216
+      ],
+      "smin": 5,
+      "smax": 36,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1208,
+      "weights": [
+        9232,
+        10576
+      ],
+      "sizes": [
+        409,
+        355
+      ],
+      "smin": 8,
+      "smax": 43,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          2,
+          1
+        ],
+        "used_width": 1173.0,
+        "scrap_mm": 35.0,
+        "scrap_pct": 2.8973509933774833,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 286.95,
+        "scrap_total_kg": 573.91
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1285,
+      "weights": [
+        8130,
+        6402,
+        8954
+      ],
+      "sizes": [
+        334,
+        300,
+        258
+      ],
+      "smin": 7,
+      "smax": 51,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          2,
+          1
+        ],
+        "used_width": 1173.0,
+        "scrap_mm": 35.0,
+        "scrap_pct": 2.8973509933774833,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 286.95,
+        "scrap_total_kg": 573.91
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1164,
+      "weights": [
+        13041,
+        12342,
+        5282
+      ],
+      "sizes": [
+        200
+      ],
+      "smin": 7,
+      "smax": 32,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1139,
+      "weights": [
+        14528,
+        11046
+      ],
+      "sizes": [
+        333,
+        321
+      ],
+      "smin": 11,
+      "smax": 38,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1159,
+      "weights": [
+        12434,
+        9438
+      ],
+      "sizes": [
+        178,
+        168
+      ],
+      "smin": 3,
+      "smax": 49,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 861,
+      "weights": [
+        13779,
+        8033
+      ],
+      "sizes": [
+        160
+      ],
+      "smin": 15,
+      "smax": 32,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1226,
+      "weights": [
+        8180
+      ],
+      "sizes": [
+        234,
+        166
+      ],
+      "smin": 5,
+      "smax": 24,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1073,
+      "weights": [
+        7073,
+        9494,
+        5745
+      ],
+      "sizes": [
+        333
+      ],
+      "smin": 9,
+      "smax": 53,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1244,
+      "weights": [
+        13042,
+        6680,
+        5200
+      ],
+      "sizes": [
+        295,
+        290,
+        195
+      ],
+      "smin": 14,
+      "smax": 35,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 929,
+      "weights": [
+        12827
+      ],
+      "sizes": [
+        470
+      ],
+      "smin": 2,
+      "smax": 27,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1095,
+      "weights": [
+        5878
+      ],
+      "sizes": [
+        126
+      ],
+      "smin": 18,
+      "smax": 37,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 860,
+      "weights": [
+        14143
+      ],
+      "sizes": [
+        360,
+        355
+      ],
+      "smin": 19,
+      "smax": 33,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1265,
+      "weights": [
+        12253,
+        9871
+      ],
+      "sizes": [
+        341,
+        269,
+        206
+      ],
+      "smin": 19,
+      "smax": 22,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1120,
+      "weights": [
+        8457
+      ],
+      "sizes": [
+        388,
+        91
+      ],
+      "smin": 5,
+      "smax": 20,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 838,
+      "weights": [
+        7564,
+        5043,
+        11693
+      ],
+      "sizes": [
+        402,
+        354
+      ],
+      "smin": 15,
+      "smax": 33,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 947,
+      "weights": [
+        9632
+      ],
+      "sizes": [
+        490,
+        282,
+        86
+      ],
+      "smin": 7,
+      "smax": 23,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 858,
+      "weights": [
+        13922,
+        8683
+      ],
+      "sizes": [
+        473,
+        186,
+        126
+      ],
+      "smin": 4,
+      "smax": 8,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1152,
+      "weights": [
+        9982,
+        11594
+      ],
+      "sizes": [
+        326,
+        306
+      ],
+      "smin": 15,
+      "smax": 43,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 820,
+      "weights": [
+        12078,
+        10280,
+        14891
+      ],
+      "sizes": [
+        96,
+        63
+      ],
+      "smin": 7,
+      "smax": 50,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          7,
+          2
+        ],
+        "used_width": 798.0,
+        "scrap_mm": 22.0,
+        "scrap_pct": 2.682926829268293,
+        "total_strips": 9,
+        "scrap_per_coil_kg": 333.12,
+        "scrap_total_kg": 999.36
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          5,
+          5
+        ],
+        "used_width": 795.0,
+        "scrap_mm": 25.0,
+        "scrap_pct": 3.048780487804878,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 378.55,
+        "scrap_total_kg": 1135.64
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          3,
+          8
+        ],
+        "used_width": 792.0,
+        "scrap_mm": 28.0,
+        "scrap_pct": 3.414634146341464,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 423.97,
+        "scrap_total_kg": 1271.92
+      },
+      {
+        "rank": 4,
+        "qty_per_size": [
+          1,
+          11
+        ],
+        "used_width": 789.0,
+        "scrap_mm": 31.0,
+        "scrap_pct": 3.7804878048780486,
+        "total_strips": 12,
+        "scrap_per_coil_kg": 469.4,
+        "scrap_total_kg": 1408.19
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1220,
+      "weights": [
+        9415,
+        14441,
+        5659
+      ],
+      "sizes": [
+        290
+      ],
+      "smin": 16,
+      "smax": 57,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 892,
+      "weights": [
+        14590,
+        12141
+      ],
+      "sizes": [
+        466,
+        301,
+        96
+      ],
+      "smin": 15,
+      "smax": 37,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 964,
+      "weights": [
+        6713,
+        7634
+      ],
+      "sizes": [
+        405,
+        260
+      ],
+      "smin": 15,
+      "smax": 33,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 818,
+      "weights": [
+        12451,
+        6442,
+        10153
+      ],
+      "sizes": [
+        215,
+        109
+      ],
+      "smin": 12,
+      "smax": 44,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1245,
+      "weights": [
+        13889,
+        12569,
+        11770
+      ],
+      "sizes": [
+        146
+      ],
+      "smin": 16,
+      "smax": 39,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1026,
+      "weights": [
+        5845,
+        8335,
+        9375
+      ],
+      "sizes": [
+        274,
+        197,
+        117
+      ],
+      "smin": 15,
+      "smax": 22,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1111,
+      "weights": [
+        8920,
+        7594,
+        10091
+      ],
+      "sizes": [
+        332,
+        258,
+        57
+      ],
+      "smin": 2,
+      "smax": 16,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1284,
+      "weights": [
+        6924,
+        7522
+      ],
+      "sizes": [
+        416,
+        199
+      ],
+      "smin": 16,
+      "smax": 61,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          3,
+          0
+        ],
+        "used_width": 1248.0,
+        "scrap_mm": 36.0,
+        "scrap_pct": 2.803738317757009,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 202.51,
+        "scrap_total_kg": 405.03
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          2,
+          2
+        ],
+        "used_width": 1230.0,
+        "scrap_mm": 54.0,
+        "scrap_pct": 4.205607476635514,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 303.77,
+        "scrap_total_kg": 607.54
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1227,
+      "weights": [
+        12905,
+        12736
+      ],
+      "sizes": [
+        283
+      ],
+      "smin": 17,
+      "smax": 26,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1271,
+      "weights": [
+        14820
+      ],
+      "sizes": [
+        492,
+        432,
+        119
+      ],
+      "smin": 2,
+      "smax": 19,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          0,
+          1,
+          7
+        ],
+        "used_width": 1265.0,
+        "scrap_mm": 6.0,
+        "scrap_pct": 0.47206923682140045,
+        "total_strips": 8,
+        "scrap_per_coil_kg": 69.96,
+        "scrap_total_kg": 69.96
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1278,
+      "weights": [
+        13318,
+        9377
+      ],
+      "sizes": [
+        194
+      ],
+      "smin": 9,
+      "smax": 46,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1028,
+      "weights": [
+        13824
+      ],
+      "sizes": [
+        226,
+        220
+      ],
+      "smin": 17,
+      "smax": 65,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1277,
+      "weights": [
+        10272,
+        8090
+      ],
+      "sizes": [
+        342,
+        246,
+        172
+      ],
+      "smin": 7,
+      "smax": 56,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 962,
+      "weights": [
+        12749
+      ],
+      "sizes": [
+        465,
+        247,
+        245
+      ],
+      "smin": 20,
+      "smax": 29,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 864,
+      "weights": [
+        13229
+      ],
+      "sizes": [
+        495,
+        219,
+        101
+      ],
+      "smin": 14,
+      "smax": 20,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1169,
+      "weights": [
+        7361
+      ],
+      "sizes": [
+        495,
+        385
+      ],
+      "smin": 4,
+      "smax": 8,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 973,
+      "weights": [
+        11512,
+        6315
+      ],
+      "sizes": [
+        486,
+        395
+      ],
+      "smin": 17,
+      "smax": 41,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1167,
+      "weights": [
+        12994,
+        13864,
+        5588
+      ],
+      "sizes": [
+        373,
+        170,
+        85
+      ],
+      "smin": 9,
+      "smax": 23,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1300,
+      "weights": [
+        6612,
+        6646
+      ],
+      "sizes": [
+        405,
+        135
+      ],
+      "smin": 9,
+      "smax": 10,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1207,
+      "weights": [
+        5919,
+        9806
+      ],
+      "sizes": [
+        270,
+        241
+      ],
+      "smin": 4,
+      "smax": 19,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1149,
+      "weights": [
+        7950,
+        7785,
+        7868
+      ],
+      "sizes": [
+        362
+      ],
+      "smin": 12,
+      "smax": 51,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1267,
+      "weights": [
+        14554,
+        7344
+      ],
+      "sizes": [
+        286
+      ],
+      "smin": 20,
+      "smax": 36,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1141,
+      "weights": [
+        5153,
+        12622
+      ],
+      "sizes": [
+        396,
+        329
+      ],
+      "smin": 5,
+      "smax": 9,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1100,
+      "weights": [
+        9901,
+        11951
+      ],
+      "sizes": [
+        482,
+        283,
+        178
+      ],
+      "smin": 9,
+      "smax": 21,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 854,
+      "weights": [
+        8886,
+        11248
+      ],
+      "sizes": [
+        344,
+        233,
+        201
+      ],
+      "smin": 9,
+      "smax": 10,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1210,
+      "weights": [
+        10772,
+        8588,
+        8115
+      ],
+      "sizes": [
+        436,
+        397,
+        178
+      ],
+      "smin": 4,
+      "smax": 44,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1130,
+      "weights": [
+        5645,
+        10061,
+        12222
+      ],
+      "sizes": [
+        346
+      ],
+      "smin": 11,
+      "smax": 57,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1265,
+      "weights": [
+        9835
+      ],
+      "sizes": [
+        432,
+        262
+      ],
+      "smin": 5,
+      "smax": 17,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1248,
+      "weights": [
+        10994,
+        13697,
+        13221
+      ],
+      "sizes": [
+        475,
+        134
+      ],
+      "smin": 8,
+      "smax": 38,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          2,
+          2
+        ],
+        "used_width": 1218.0,
+        "scrap_mm": 30.0,
+        "scrap_pct": 2.403846153846154,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 303.78,
+        "scrap_total_kg": 911.35
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1245,
+      "weights": [
+        10549,
+        6886,
+        12673
+      ],
+      "sizes": [
+        122
+      ],
+      "smin": 7,
+      "smax": 50,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          10
+        ],
+        "used_width": 1220.0,
+        "scrap_mm": 25.0,
+        "scrap_pct": 2.0080321285140563,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 201.53,
+        "scrap_total_kg": 604.58
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 987,
+      "weights": [
+        6479,
+        11464,
+        5228
+      ],
+      "sizes": [
+        324,
+        113
+      ],
+      "smin": 14,
+      "smax": 37,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          3,
+          0
+        ],
+        "used_width": 972.0,
+        "scrap_mm": 15.0,
+        "scrap_pct": 1.5197568389057752,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 117.38,
+        "scrap_total_kg": 352.14
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 995,
+      "weights": [
+        11086,
+        6775,
+        8830
+      ],
+      "sizes": [
+        367,
+        62
+      ],
+      "smin": 17,
+      "smax": 37,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 832,
+      "weights": [
+        12606,
+        9951,
+        11689
+      ],
+      "sizes": [
+        121
+      ],
+      "smin": 1,
+      "smax": 3,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 859,
+      "weights": [
+        6592,
+        8846
+      ],
+      "sizes": [
+        282,
+        248,
+        119
+      ],
+      "smin": 11,
+      "smax": 53,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1180,
+      "weights": [
+        7531,
+        11797,
+        6622
+      ],
+      "sizes": [
+        365,
+        258
+      ],
+      "smin": 8,
+      "smax": 10,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1027,
+      "weights": [
+        12285
+      ],
+      "sizes": [
+        487
+      ],
+      "smin": 11,
+      "smax": 17,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1261,
+      "weights": [
+        10876,
+        5992,
+        11523
+      ],
+      "sizes": [
+        147,
+        112
+      ],
+      "smin": 14,
+      "smax": 19,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1127,
+      "weights": [
+        14783,
+        5349,
+        5828
+      ],
+      "sizes": [
+        174,
+        114
+      ],
+      "smin": 18,
+      "smax": 31,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          5,
+          2
+        ],
+        "used_width": 1098.0,
+        "scrap_mm": 29.0,
+        "scrap_pct": 2.5732031943212066,
+        "total_strips": 7,
+        "scrap_per_coil_kg": 222.67,
+        "scrap_total_kg": 668.0
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 906,
+      "weights": [
+        14607,
+        8538,
+        8817
+      ],
+      "sizes": [
+        446,
+        125
+      ],
+      "smin": 19,
+      "smax": 19,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 866,
+      "weights": [
+        13850
+      ],
+      "sizes": [
+        458,
+        139
+      ],
+      "smin": 3,
+      "smax": 45,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 807,
+      "weights": [
+        10869
+      ],
+      "sizes": [
+        351
+      ],
+      "smin": 10,
+      "smax": 11,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 826,
+      "weights": [
+        7076,
+        11897
+      ],
+      "sizes": [
+        431,
+        108,
+        82
+      ],
+      "smin": 15,
+      "smax": 43,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          2,
+          2
+        ],
+        "used_width": 811.0,
+        "scrap_mm": 15.0,
+        "scrap_pct": 1.8159806295399514,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 172.27,
+        "scrap_total_kg": 344.55
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          0,
+          2,
+          7
+        ],
+        "used_width": 790.0,
+        "scrap_mm": 36.0,
+        "scrap_pct": 4.358353510895883,
+        "total_strips": 9,
+        "scrap_per_coil_kg": 413.46,
+        "scrap_total_kg": 826.91
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          0,
+          5,
+          3
+        ],
+        "used_width": 786.0,
+        "scrap_mm": 40.0,
+        "scrap_pct": 4.842615012106537,
+        "total_strips": 8,
+        "scrap_per_coil_kg": 459.39,
+        "scrap_total_kg": 918.79
+      },
+      {
+        "rank": 4,
+        "qty_per_size": [
+          1,
+          1,
+          3
+        ],
+        "used_width": 785.0,
+        "scrap_mm": 41.0,
+        "scrap_pct": 4.963680387409201,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 470.88,
+        "scrap_total_kg": 941.76
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1103,
+      "weights": [
+        6786,
+        12405,
+        13254
+      ],
+      "sizes": [
+        364
+      ],
+      "smin": 1,
+      "smax": 47,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          3
+        ],
+        "used_width": 1092.0,
+        "scrap_mm": 11.0,
+        "scrap_pct": 0.9972801450589301,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 107.86,
+        "scrap_total_kg": 323.57
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1129,
+      "weights": [
+        5510,
+        5996
+      ],
+      "sizes": [
+        483,
+        255
+      ],
+      "smin": 13,
+      "smax": 56,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1164,
+      "weights": [
+        12267,
+        6204
+      ],
+      "sizes": [
+        214
+      ],
+      "smin": 19,
+      "smax": 28,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 940,
+      "weights": [
+        14590
+      ],
+      "sizes": [
+        414,
+        245,
+        216
+      ],
+      "smin": 19,
+      "smax": 52,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          2,
+          0
+        ],
+        "used_width": 904.0,
+        "scrap_mm": 36.0,
+        "scrap_pct": 3.829787234042553,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 558.77,
+        "scrap_total_kg": 558.77
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          0,
+          1,
+          3
+        ],
+        "used_width": 893.0,
+        "scrap_mm": 47.0,
+        "scrap_pct": 5.0,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 729.5,
+        "scrap_total_kg": 729.5
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1058,
+      "weights": [
+        14919,
+        12048
+      ],
+      "sizes": [
+        456
+      ],
+      "smin": 3,
+      "smax": 44,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1031,
+      "weights": [
+        8743,
+        11779
+      ],
+      "sizes": [
+        473,
+        282
+      ],
+      "smin": 12,
+      "smax": 38,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1018,
+      "weights": [
+        10120,
+        9176
+      ],
+      "sizes": [
+        401,
+        128
+      ],
+      "smin": 15,
+      "smax": 19,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 847,
+      "weights": [
+        12075
+      ],
+      "sizes": [
+        431
+      ],
+      "smin": 11,
+      "smax": 19,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1289,
+      "weights": [
+        14201,
+        14202,
+        10400
+      ],
+      "sizes": [
+        260,
+        231,
+        112
+      ],
+      "smin": 13,
+      "smax": 59,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1107,
+      "weights": [
+        10119,
+        10761
+      ],
+      "sizes": [
+        345
+      ],
+      "smin": 16,
+      "smax": 29,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1046,
+      "weights": [
+        8674,
+        6773,
+        10736
+      ],
+      "sizes": [
+        440,
+        238,
+        108
+      ],
+      "smin": 8,
+      "smax": 44,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1232,
+      "weights": [
+        14190,
+        14121
+      ],
+      "sizes": [
+        361
+      ],
+      "smin": 8,
+      "smax": 9,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1159,
+      "weights": [
+        10062,
+        10567
+      ],
+      "sizes": [
+        142,
+        53
+      ],
+      "smin": 4,
+      "smax": 40,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          7,
+          3
+        ],
+        "used_width": 1153.0,
+        "scrap_mm": 6.0,
+        "scrap_pct": 0.5176876617773942,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 53.4,
+        "scrap_total_kg": 106.79
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          4,
+          11
+        ],
+        "used_width": 1151.0,
+        "scrap_mm": 8.0,
+        "scrap_pct": 0.6902502157031924,
+        "total_strips": 15,
+        "scrap_per_coil_kg": 71.2,
+        "scrap_total_kg": 142.39
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          1,
+          19
+        ],
+        "used_width": 1149.0,
+        "scrap_mm": 10.0,
+        "scrap_pct": 0.8628127696289906,
+        "total_strips": 20,
+        "scrap_per_coil_kg": 88.99,
+        "scrap_total_kg": 177.99
+      },
+      {
+        "rank": 4,
+        "qty_per_size": [
+          8,
+          0
+        ],
+        "used_width": 1136.0,
+        "scrap_mm": 23.0,
+        "scrap_pct": 1.984469370146678,
+        "total_strips": 8,
+        "scrap_per_coil_kg": 204.69,
+        "scrap_total_kg": 409.38
+      },
+      {
+        "rank": 5,
+        "qty_per_size": [
+          5,
+          8
+        ],
+        "used_width": 1134.0,
+        "scrap_mm": 25.0,
+        "scrap_pct": 2.1570319240724762,
+        "total_strips": 13,
+        "scrap_per_coil_kg": 222.49,
+        "scrap_total_kg": 444.97
+      },
+      {
+        "rank": 6,
+        "qty_per_size": [
+          2,
+          16
+        ],
+        "used_width": 1132.0,
+        "scrap_mm": 27.0,
+        "scrap_pct": 2.3295944779982745,
+        "total_strips": 18,
+        "scrap_per_coil_kg": 240.29,
+        "scrap_total_kg": 480.57
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 872,
+      "weights": [
+        5502
+      ],
+      "sizes": [
+        432
+      ],
+      "smin": 16,
+      "smax": 29,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1032,
+      "weights": [
+        10585,
+        7578
+      ],
+      "sizes": [
+        419,
+        209
+      ],
+      "smin": 10,
+      "smax": 59,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 879,
+      "weights": [
+        7579
+      ],
+      "sizes": [
+        395,
+        91,
+        75
+      ],
+      "smin": 8,
+      "smax": 36,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          2,
+          0,
+          1
+        ],
+        "used_width": 865.0,
+        "scrap_mm": 14.0,
+        "scrap_pct": 1.5927189988623434,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 120.71,
+        "scrap_total_kg": 120.71
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          0,
+          7,
+          3
+        ],
+        "used_width": 862.0,
+        "scrap_mm": 17.0,
+        "scrap_pct": 1.9340159271899888,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 146.58,
+        "scrap_total_kg": 146.58
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          1,
+          1,
+          5
+        ],
+        "used_width": 861.0,
+        "scrap_mm": 18.0,
+        "scrap_pct": 2.04778156996587,
+        "total_strips": 7,
+        "scrap_per_coil_kg": 155.2,
+        "scrap_total_kg": 155.2
+      },
+      {
+        "rank": 4,
+        "qty_per_size": [
+          0,
+          2,
+          9
+        ],
+        "used_width": 857.0,
+        "scrap_mm": 22.0,
+        "scrap_pct": 2.502844141069397,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 189.69,
+        "scrap_total_kg": 189.69
+      },
+      {
+        "rank": 5,
+        "qty_per_size": [
+          1,
+          5,
+          0
+        ],
+        "used_width": 850.0,
+        "scrap_mm": 29.0,
+        "scrap_pct": 3.299203640500569,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 250.05,
+        "scrap_total_kg": 250.05
+      },
+      {
+        "rank": 6,
+        "qty_per_size": [
+          0,
+          6,
+          4
+        ],
+        "used_width": 846.0,
+        "scrap_mm": 33.0,
+        "scrap_pct": 3.754266211604096,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 284.54,
+        "scrap_total_kg": 284.54
+      },
+      {
+        "rank": 7,
+        "qty_per_size": [
+          1,
+          0,
+          6
+        ],
+        "used_width": 845.0,
+        "scrap_mm": 34.0,
+        "scrap_pct": 3.8680318543799777,
+        "total_strips": 7,
+        "scrap_per_coil_kg": 293.16,
+        "scrap_total_kg": 293.16
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1110,
+      "weights": [
+        12242,
+        11785
+      ],
+      "sizes": [
+        436,
+        160
+      ],
+      "smin": 16,
+      "smax": 23,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 856,
+      "weights": [
+        9640,
+        14717
+      ],
+      "sizes": [
+        391,
+        319
+      ],
+      "smin": 9,
+      "smax": 11,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1106,
+      "weights": [
+        5897,
+        5125
+      ],
+      "sizes": [
+        204
+      ],
+      "smin": 6,
+      "smax": 55,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 948,
+      "weights": [
+        10375,
+        6965
+      ],
+      "sizes": [
+        304
+      ],
+      "smin": 13,
+      "smax": 24,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1072,
+      "weights": [
+        8770,
+        13196
+      ],
+      "sizes": [
+        476,
+        462,
+        392
+      ],
+      "smin": 11,
+      "smax": 15,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 821,
+      "weights": [
+        12147,
+        5307,
+        12532
+      ],
+      "sizes": [
+        491
+      ],
+      "smin": 10,
+      "smax": 46,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1007,
+      "weights": [
+        11843,
+        9743,
+        6887
+      ],
+      "sizes": [
+        216,
+        60
+      ],
+      "smin": 5,
+      "smax": 44,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          13
+        ],
+        "used_width": 996.0,
+        "scrap_mm": 11.0,
+        "scrap_pct": 1.0923535253227408,
+        "total_strips": 14,
+        "scrap_per_coil_kg": 103.68,
+        "scrap_total_kg": 311.03
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          4,
+          2
+        ],
+        "used_width": 984.0,
+        "scrap_mm": 23.0,
+        "scrap_pct": 2.284011916583913,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 216.78,
+        "scrap_total_kg": 650.33
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          2,
+          9
+        ],
+        "used_width": 972.0,
+        "scrap_mm": 35.0,
+        "scrap_pct": 3.475670307845084,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 329.88,
+        "scrap_total_kg": 989.63
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1270,
+      "weights": [
+        10928,
+        6443,
+        12155
+      ],
+      "sizes": [
+        174
+      ],
+      "smin": 13,
+      "smax": 50,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 840,
+      "weights": [
+        11484,
+        10083,
+        10562
+      ],
+      "sizes": [
+        220
+      ],
+      "smin": 5,
+      "smax": 9,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 931,
+      "weights": [
+        8232
+      ],
+      "sizes": [
+        358
+      ],
+      "smin": 4,
+      "smax": 52,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1287,
+      "weights": [
+        13095
+      ],
+      "sizes": [
+        436,
+        338
+      ],
+      "smin": 18,
+      "smax": 46,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 961,
+      "weights": [
+        7473,
+        12205,
+        6118
+      ],
+      "sizes": [
+        373,
+        276
+      ],
+      "smin": 9,
+      "smax": 59,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          2
+        ],
+        "used_width": 925.0,
+        "scrap_mm": 36.0,
+        "scrap_pct": 3.7460978147762747,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 322.11,
+        "scrap_total_kg": 966.34
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 828,
+      "weights": [
+        10766,
+        13312,
+        6215
+      ],
+      "sizes": [
+        286,
+        281
+      ],
+      "smin": 1,
+      "smax": 4,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1265,
+      "weights": [
+        14366,
+        8084
+      ],
+      "sizes": [
+        359,
+        293
+      ],
+      "smin": 16,
+      "smax": 25,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 852,
+      "weights": [
+        10626,
+        6381
+      ],
+      "sizes": [
+        380,
+        138,
+        70
+      ],
+      "smin": 7,
+      "smax": 52,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          0,
+          0,
+          12
+        ],
+        "used_width": 840.0,
+        "scrap_mm": 12.0,
+        "scrap_pct": 1.4084507042253522,
+        "total_strips": 12,
+        "scrap_per_coil_kg": 119.77,
+        "scrap_total_kg": 239.54
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          0,
+          1,
+          10
+        ],
+        "used_width": 838.0,
+        "scrap_mm": 14.0,
+        "scrap_pct": 1.643192488262911,
+        "total_strips": 11,
+        "scrap_per_coil_kg": 139.73,
+        "scrap_total_kg": 279.46
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          0,
+          2,
+          8
+        ],
+        "used_width": 836.0,
+        "scrap_mm": 16.0,
+        "scrap_pct": 1.8779342723004695,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 159.69,
+        "scrap_total_kg": 319.38
+      },
+      {
+        "rank": 4,
+        "qty_per_size": [
+          0,
+          3,
+          6
+        ],
+        "used_width": 834.0,
+        "scrap_mm": 18.0,
+        "scrap_pct": 2.112676056338028,
+        "total_strips": 9,
+        "scrap_per_coil_kg": 179.65,
+        "scrap_total_kg": 359.3
+      },
+      {
+        "rank": 5,
+        "qty_per_size": [
+          0,
+          4,
+          4
+        ],
+        "used_width": 832.0,
+        "scrap_mm": 20.0,
+        "scrap_pct": 2.3474178403755865,
+        "total_strips": 8,
+        "scrap_per_coil_kg": 199.61,
+        "scrap_total_kg": 399.23
+      },
+      {
+        "rank": 6,
+        "qty_per_size": [
+          2,
+          0,
+          1
+        ],
+        "used_width": 830.0,
+        "scrap_mm": 22.0,
+        "scrap_pct": 2.5821596244131455,
+        "total_strips": 3,
+        "scrap_per_coil_kg": 219.57,
+        "scrap_total_kg": 439.15
+      },
+      {
+        "rank": 7,
+        "qty_per_size": [
+          0,
+          5,
+          2
+        ],
+        "used_width": 830.0,
+        "scrap_mm": 22.0,
+        "scrap_pct": 2.5821596244131455,
+        "total_strips": 7,
+        "scrap_per_coil_kg": 219.57,
+        "scrap_total_kg": 439.15
+      },
+      {
+        "rank": 8,
+        "qty_per_size": [
+          0,
+          6,
+          0
+        ],
+        "used_width": 828.0,
+        "scrap_mm": 24.0,
+        "scrap_pct": 2.8169014084507045,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 239.54,
+        "scrap_total_kg": 479.07
+      },
+      {
+        "rank": 9,
+        "qty_per_size": [
+          1,
+          0,
+          6
+        ],
+        "used_width": 800.0,
+        "scrap_mm": 52.0,
+        "scrap_pct": 6.103286384976526,
+        "total_strips": 7,
+        "scrap_per_coil_kg": 518.99,
+        "scrap_total_kg": 1037.99
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1068,
+      "weights": [
+        13564,
+        14991
+      ],
+      "sizes": [
+        236
+      ],
+      "smin": 11,
+      "smax": 29,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1196,
+      "weights": [
+        10543,
+        14795
+      ],
+      "sizes": [
+        454
+      ],
+      "smin": 20,
+      "smax": 61,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 968,
+      "weights": [
+        6548
+      ],
+      "sizes": [
+        397,
+        247,
+        195
+      ],
+      "smin": 8,
+      "smax": 54,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 841,
+      "weights": [
+        14547,
+        7317
+      ],
+      "sizes": [
+        385,
+        208
+      ],
+      "smin": 12,
+      "smax": 20,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1086,
+      "weights": [
+        11171,
+        10381
+      ],
+      "sizes": [
+        393
+      ],
+      "smin": 16,
+      "smax": 21,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 985,
+      "weights": [
+        5298,
+        10940,
+        10060
+      ],
+      "sizes": [
+        159
+      ],
+      "smin": 10,
+      "smax": 59,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          6
+        ],
+        "used_width": 954.0,
+        "scrap_mm": 31.0,
+        "scrap_pct": 3.1472081218274113,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 275.88,
+        "scrap_total_kg": 827.65
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 915,
+      "weights": [
+        7253
+      ],
+      "sizes": [
+        89
+      ],
+      "smin": 9,
+      "smax": 59,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          10
+        ],
+        "used_width": 890.0,
+        "scrap_mm": 25.0,
+        "scrap_pct": 2.73224043715847,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 198.17,
+        "scrap_total_kg": 198.17
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1194,
+      "weights": [
+        13843,
+        13626,
+        5618
+      ],
+      "sizes": [
+        498,
+        442,
+        222
+      ],
+      "smin": 19,
+      "smax": 27,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          10
+        ],
+        "used_width": 890.0,
+        "scrap_mm": 25.0,
+        "scrap_pct": 2.73224043715847,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 198.17,
+        "scrap_total_kg": 198.17
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 883,
+      "weights": [
+        7962
+      ],
+      "sizes": [
+        464,
+        444,
+        369
+      ],
+      "smin": 5,
+      "smax": 51,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          0,
+          1
+        ],
+        "used_width": 833.0,
+        "scrap_mm": 50.0,
+        "scrap_pct": 5.662514156285391,
+        "total_strips": 2,
+        "scrap_per_coil_kg": 450.85,
+        "scrap_total_kg": 450.85
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1010,
+      "weights": [
+        10968
+      ],
+      "sizes": [
+        418,
+        277,
+        171
+      ],
+      "smin": 19,
+      "smax": 37,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1073,
+      "weights": [
+        8918
+      ],
+      "sizes": [
+        464,
+        451
+      ],
+      "smin": 15,
+      "smax": 27,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 1284,
+      "weights": [
+        14345,
+        12218,
+        12564
+      ],
+      "sizes": [
+        448,
+        245
+      ],
+      "smin": 16,
+      "smax": 49,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 1218,
+      "weights": [
+        8271
+      ],
+      "sizes": [
+        496,
+        178,
+        120
+      ],
+      "smin": 1,
+      "smax": 42,
+      "every": false
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          0,
+          6
+        ],
+        "used_width": 1216.0,
+        "scrap_mm": 2.0,
+        "scrap_pct": 0.16420361247947454,
+        "total_strips": 7,
+        "scrap_per_coil_kg": 13.58,
+        "scrap_total_kg": 13.58
+      },
+      {
+        "rank": 2,
+        "qty_per_size": [
+          1,
+          2,
+          3
+        ],
+        "used_width": 1212.0,
+        "scrap_mm": 6.0,
+        "scrap_pct": 0.49261083743842365,
+        "total_strips": 6,
+        "scrap_per_coil_kg": 40.74,
+        "scrap_total_kg": 40.74
+      },
+      {
+        "rank": 3,
+        "qty_per_size": [
+          1,
+          4,
+          0
+        ],
+        "used_width": 1208.0,
+        "scrap_mm": 10.0,
+        "scrap_pct": 0.8210180623973727,
+        "total_strips": 5,
+        "scrap_per_coil_kg": 67.91,
+        "scrap_total_kg": 67.91
+      },
+      {
+        "rank": 4,
+        "qty_per_size": [
+          0,
+          0,
+          10
+        ],
+        "used_width": 1200.0,
+        "scrap_mm": 18.0,
+        "scrap_pct": 1.477832512315271,
+        "total_strips": 10,
+        "scrap_per_coil_kg": 122.23,
+        "scrap_total_kg": 122.23
+      },
+      {
+        "rank": 5,
+        "qty_per_size": [
+          0,
+          2,
+          7
+        ],
+        "used_width": 1196.0,
+        "scrap_mm": 22.0,
+        "scrap_pct": 1.8062397372742198,
+        "total_strips": 9,
+        "scrap_per_coil_kg": 149.39,
+        "scrap_total_kg": 149.39
+      },
+      {
+        "rank": 6,
+        "qty_per_size": [
+          0,
+          4,
+          4
+        ],
+        "used_width": 1192.0,
+        "scrap_mm": 26.0,
+        "scrap_pct": 2.134646962233169,
+        "total_strips": 8,
+        "scrap_per_coil_kg": 176.56,
+        "scrap_total_kg": 176.56
+      },
+      {
+        "rank": 7,
+        "qty_per_size": [
+          0,
+          6,
+          1
+        ],
+        "used_width": 1188.0,
+        "scrap_mm": 30.0,
+        "scrap_pct": 2.4630541871921183,
+        "total_strips": 7,
+        "scrap_per_coil_kg": 203.72,
+        "scrap_total_kg": 203.72
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1083,
+      "weights": [
+        6680,
+        13452
+      ],
+      "sizes": [
+        195
+      ],
+      "smin": 2,
+      "smax": 50,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1030,
+      "weights": [
+        13410,
+        7414
+      ],
+      "sizes": [
+        163,
+        96
+      ],
+      "smin": 14,
+      "smax": 36,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 827,
+      "weights": [
+        11495,
+        13224
+      ],
+      "sizes": [
+        247,
+        170
+      ],
+      "smin": 2,
+      "smax": 25,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 1269,
+      "weights": [
+        12740,
+        7273
+      ],
+      "sizes": [
+        365,
+        290,
+        279
+      ],
+      "smin": 0,
+      "smax": 5,
+      "every": true
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 2,
+      "width": 910,
+      "weights": [
+        7449,
+        13991
+      ],
+      "sizes": [
+        361,
+        320,
+        266
+      ],
+      "smin": 3,
+      "smax": 52,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 954,
+      "weights": [
+        6996
+      ],
+      "sizes": [
+        172
+      ],
+      "smin": 13,
+      "smax": 53,
+      "every": false
+    },
+    "results": []
+  },
+  {
+    "config": {
+      "coils": 1,
+      "width": 856,
+      "weights": [
+        13189
+      ],
+      "sizes": [
+        373,
+        324,
+        58
+      ],
+      "smin": 16,
+      "smax": 52,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          1,
+          2
+        ],
+        "used_width": 813.0,
+        "scrap_mm": 43.0,
+        "scrap_pct": 5.0233644859813085,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 662.53,
+        "scrap_total_kg": 662.53
+      }
+    ]
+  },
+  {
+    "config": {
+      "coils": 3,
+      "width": 873,
+      "weights": [
+        9772,
+        12032,
+        5025
+      ],
+      "sizes": [
+        342,
+        230,
+        173
+      ],
+      "smin": 13,
+      "smax": 24,
+      "every": true
+    },
+    "results": [
+      {
+        "rank": 1,
+        "qty_per_size": [
+          1,
+          1,
+          2
+        ],
+        "used_width": 813.0,
+        "scrap_mm": 43.0,
+        "scrap_pct": 5.0233644859813085,
+        "total_strips": 4,
+        "scrap_per_coil_kg": 662.53,
+        "scrap_total_kg": 662.53
+      }
+    ]
+  }
+]

@@ -1,0 +1,76 @@
+{
+  "case": "CASE_B",
+  "config": {
+    "coils": 3,
+    "width": 1260,
+    "weights": [
+      10000,
+      10000,
+      10000
+    ],
+    "sizes": [
+      111,
+      225,
+      79
+    ],
+    "smin": 2,
+    "smax": 5,
+    "every": true
+  },
+  "results": [
+    {
+      "rank": 1,
+      "qty_per_size": [
+        9,
+        1
+      ],
+      "used_width": 1249.0,
+      "scrap_mm": 1.0,
+      "scrap_pct": 0.08,
+      "total_strips": 10,
+      "scrap_per_coil_kg": 8.0,
+      "scrap_total_kg": 8.0
+    },
+    {
+      "rank": 2,
+      "qty_per_size": [
+        2,
+        4
+      ],
+      "used_width": 1222.0,
+      "scrap_mm": 28.0,
+      "scrap_pct": 2.2399999999999998,
+      "total_strips": 6,
+      "scrap_per_coil_kg": 224.0,
+      "scrap_total_kg": 224.0
+    }
+  ],
+  "best_knives": [
+    111.0,
+    222.0,
+    333.0,
+    444.0,
+    555.0,
+    666.0,
+    777.0,
+    888.0,
+    999.0,
+    1249.0
+  ],
+  "best_weights": [
+    {
+      "size": 111.0,
+      "qty_per_coil": 9,
+      "total_qty": 9,
+      "weight_per_strip_kg": 888.0,
+      "total_weight_kg": 7992.0
+    },
+    {
+      "size": 250.0,
+      "qty_per_coil": 1,
+      "total_qty": 1,
+      "weight_per_strip_kg": 2000.0,
+      "total_weight_kg": 2000.0
+    }
+  ]
+}

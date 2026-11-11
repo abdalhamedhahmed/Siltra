@@ -1,0 +1,20 @@
+{
+  "case": "CASE_M",
+  "config": {
+    "coils": 1,
+    "width": 1250,
+    "weights": [
+      10000
+    ],
+    "sizes": [
+      111,
+      250
+    ],
+    "smin": 0,
+    "smax": 30,
+    "every": true
+  },
+  "results": [],
+  "best_knives": [],
+  "best_weights": []
+}
