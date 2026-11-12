@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 """Test that table_cell_style is properly defined"""
+import os
 import sys
 sys.path.insert(0, r'C:\Users\Abdalhamed Ahmed\Desktop\fac')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 # Test that module-level styles are importable
-from slitra.reports import table_cell_style, body_style_base, small_body_style_base
+from reports import table_cell_style, body_style_base, small_body_style_base
 print(f"table_cell_style name: {table_cell_style.name}")
 print(f"body_style_base name: {body_style_base.name}")
 print(f"small_body_style_base name: {small_body_style_base.name}")

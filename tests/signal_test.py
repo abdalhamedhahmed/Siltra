@@ -2,10 +2,14 @@
 """Test to verify signal connections"""
 
 import sys
+import os
 import time
 from PySide6.QtWidgets import QApplication
-from slitra.slitra_window import MainWindow
-from slitra.slitra_controller import SlitraController
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from slitra_window import MainWindow
+from slitra_controller import SlitraController
 
 
 def test_signal_connections():

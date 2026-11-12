@@ -1,5 +1,5 @@
 """
-Slitra - Coil Slitting Calculator v4.1.1
+Slitra - Coil Slitting Optimizer v4.1.1
 ZAT AL-EMAD FACTORY
 """
 

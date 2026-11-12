@@ -1,12 +1,16 @@
 """Run all tests A through I to verify the refactored calculator."""
 import json
+import os
+import sys
 import time
 import subprocess
-import sys
-from slitra.core import find_all_combinations, get_lowest_possible_scrap, calculate_combination_details, verify_weight_balance
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from core import find_all_combinations, get_lowest_possible_scrap, calculate_combination_details, verify_weight_balance
 
 print("=" * 60)
-print("TEST SUITE FOR REFACTORED COIL SLITTING CALCULATOR")
+print("TEST SUITE FOR REFACTORED COIL SLITTING OPTIMIZER")
 print("=" * 60)
 
 # ---- Test A ----
@@ -219,12 +223,12 @@ if not os.path.exists(legacy_file):
     print(f"  SKIPPED: {legacy_file} was deleted during refactoring")
     print("  [PASSED - SKIPPED]")
 else:
-    print(f"  Running: python -m PyInstaller --onefile --windowed --name CoilSlittingCalculator --add-data \"logo.png;.\" {legacy_file}")
+    print(f"  Running: python -m PyInstaller --onefile --windowed --name CoilSlittingOptimizer --add-data \"logo.png;.\" {legacy_file}")
 
     result = subprocess.run([
         sys.executable, "-m", "PyInstaller",
         "--onefile", "--windowed",
-        "--name", "CoilSlittingCalculator",
+        "--name", "CoilSlittingOptimizer",
         "--add-data", "logo.png;.",
         legacy_file
     ], capture_output=True, text=True, cwd=".", timeout=120)
@@ -233,7 +237,7 @@ else:
         print("  [PASSED] EXE built successfully")
         # Check if exe exists
         import glob
-        exe_files = glob.glob("dist/CoilSlittingCalculator.exe") + glob.glob("dist/CoilSlittingCalculator")
+        exe_files = glob.glob("dist/CoilSlittingOptimizer.exe") + glob.glob("dist/CoilSlittingOptimizer")
         if exe_files:
             print(f"  EXE found at: {exe_files[0]}")
         else:

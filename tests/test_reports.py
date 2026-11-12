@@ -1,4 +1,9 @@
-from slitra.core import find_all_combinations_bounded, calculate_combination_details
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from core import find_all_combinations_bounded, calculate_combination_details
 
 # Test with CASE M
 coil_width = 1250
@@ -37,7 +42,7 @@ settings = {
     'total_coil_weight': 10000,
 }
 
-from slitra.reports import build_report_data, export_pdf, export_excel
+from reports import build_report_data, export_pdf, export_excel
 report_data = build_report_data(result, 0, settings)
 
 success = export_pdf(report_data, 'test_CASE_M_final.pdf', version='3.7.1')

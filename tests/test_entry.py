@@ -1,11 +1,13 @@
 from PySide6.QtWidgets import QApplication
 import sys
-from slitra.slitra_window import MainWindow
-from slitra.slitra_controller import SlitraController
+import os
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from slitra_window import MainWindow
+from slitra_controller import SlitraController
 
 app = QApplication.instance() or QApplication(sys.argv)
-from slitra.slitra_window import MainWindow
-from slitra.slitra_controller import SlitraController
 w = MainWindow()
 c = SlitraController(w)
 print('coils_edit text:', repr(w.left.coils_edit.text()))

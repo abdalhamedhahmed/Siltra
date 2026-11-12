@@ -1,8 +1,8 @@
 import sys
-sys.path.insert(0, r'C:\Users\Abdalhamed Ahmed\Desktop\fac-1327')
-from slitra.core import find_all_combinations_bounded, calculate_combination_details
-from slitra.reports import build_report_data, export_pdf, export_excel
 import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+from core import find_all_combinations_bounded, calculate_combination_details
+from reports import build_report_data, export_pdf, export_excel
 
 # Test case: 8 coils, same as user request
 coil_width = 1250

@@ -81,7 +81,7 @@ def main():
     with open('layout_skeleton.py', 'r', encoding='utf-8') as f:
         skeleton = f.read()
 
-    with open('slitra_window.py', 'r', encoding='utf-8') as f:
+    with open('src/slitra_window.py', 'r', encoding='utf-8') as f:
         window = f.read()
 
     # Extract classes

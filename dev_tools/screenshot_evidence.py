@@ -25,8 +25,8 @@ if os.path.exists(segoe_path):
 else:
     print(f"WARNING: Segoe UI font not found at {segoe_path}")
 
-from slitra.slitra_window import MainWindow, apply_light_palette
-from slitra.state import MemoryStore
+from slitra_window import MainWindow, apply_light_palette
+from state import MemoryStore
 
 os.makedirs("screenshots/slitra_fix7", exist_ok=True)
 

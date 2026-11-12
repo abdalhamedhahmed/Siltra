@@ -6,16 +6,16 @@ import os
 from unittest.mock import patch, MagicMock
 
 # Add the current directory to path
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
 def test_imports():
     """Test that all required modules can be imported"""
     try:
         from PySide6.QtWidgets import QApplication
-        from slitra.slitra_window import MainWindow
-        from slitra.slitra_controller import SlitraController
-        import slitra.core as core
+        from slitra_window import MainWindow
+        from slitra_controller import SlitraController
+        import core as core
         print("[PASS] All imports successful")
         return True
     except Exception as e:
@@ -26,7 +26,7 @@ def test_imports():
 def test_core_functions():
     """Test that core functions work as expected"""
     try:
-        from slitra.core import find_all_combinations, find_all_combinations_bounded
+        from core import find_all_combinations, find_all_combinations_bounded
 
         # Test basic calculation
         combos, stopped = find_all_combinations(
@@ -65,7 +65,7 @@ def test_ui_initialization():
     """Test that UI can be initialized (without showing)"""
     try:
         from PySide6.QtWidgets import QApplication
-        from slitra.slitra_window import MainWindow
+        from slitra_window import MainWindow
 
         # Create QApplication if needed
         app = QApplication.instance()
@@ -102,7 +102,7 @@ def test_get_input_values():
     """Test input validation and retrieval"""
     try:
         from PySide6.QtWidgets import QApplication
-        from slitra.slitra_window import MainWindow
+        from slitra_window import MainWindow
 
         app = QApplication.instance() or QApplication([])
         window = MainWindow()
@@ -151,7 +151,7 @@ def test_theme_system():
     """Test that theme switching works"""
     try:
         from PySide6.QtWidgets import QApplication
-        from slitra.slitra_window import MainWindow
+        from slitra_window import MainWindow
 
         app = QApplication.instance() or QApplication([])
         window = MainWindow()

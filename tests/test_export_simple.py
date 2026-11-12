@@ -1,6 +1,11 @@
+import os
+import sys
+
 import tkinter as tk
 import tkinter.filedialog as filedialog
 import tkinter.messagebox as messagebox
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 # Mock filedialog and messagebox to avoid UI blocking
 original_asksaveasfilename = filedialog.asksaveasfilename
@@ -36,9 +41,9 @@ root = tk.Tk()
 root.withdraw()
 
 # Import using new architecture
-from slitra.slitra_window import MainWindow
-from slitra.slitra_controller import SlitraController
-from slitra.core import find_all_combinations, calculate_combination_details
+from slitra_window import MainWindow
+from slitra_controller import SlitraController
+from core import find_all_combinations, calculate_combination_details
 
 app = MainWindow()
 controller = SlitraController(app)

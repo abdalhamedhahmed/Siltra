@@ -3,10 +3,10 @@
 
 import sys
 import os
-sys.path.insert(0, r'C:\Users\Abdalhamed Ahmed\Desktop\fac')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from slitra.core import find_all_combinations_bounded, calculate_combination_details
-from slitra.reports import build_report_data, export_pdf, export_excel
+from core import find_all_combinations_bounded, calculate_combination_details
+from reports import build_report_data, export_pdf, export_excel
 
 def run_test_case(name, coil_width, strip_sizes, min_scrap, max_scrap, at_least_once, num_coils, total_coil_weight):
     print(f"\n{'='*60}")

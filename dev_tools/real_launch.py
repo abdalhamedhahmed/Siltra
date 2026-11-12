@@ -26,8 +26,12 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QGuiApplication, QPalette
 
+# Add src to path so 'slitra' package imports work
+sys.path.insert(0, r"{project_root}/src")
+os.chdir(r"{project_root}")
+
 # Import and run the actual app's main logic
-import ui_qt
+from slitra_controller import create_app_and_window
 
 # Override the exec to capture state after window creation
 original_exec = QApplication.exec

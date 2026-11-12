@@ -30,9 +30,14 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtTest import QTest
 from PySide6.QtGui import QGuiApplication, QPalette, QPixmap
 
+# Add src to path so 'slitra' package imports work
+sys.path.insert(0, r"{project_root}/src")
+os.chdir(r"{project_root}")
+
 print("=== PARITY AUDIT: {window_type} ===")
 
-import ui_qt
+# Import from the new app entry point (ui_qt.py was removed during refactor)
+from slitra_controller import create_app_and_window
 
 original_exec = QApplication.exec
 captured = False
@@ -260,9 +265,11 @@ def test_logo(window):
             return
     print("  No logo pixmap found on any QLabel")
 
-# Set up argv and run
-sys.argv = ['ui_qt.py', '{window_type}']
-ui_qt.main()
+# Set up argv and run via the new app entry point
+sys.argv = ['slitra_controller.py', '{window_type}']
+app, window, controller = create_app_and_window()
+window.showMaximized()
+app.exec()
 '''
 
     temp_script = os.path.join(project_root, f"temp_audit_{window_type.replace(' ', '_').replace('--', '')}.py")

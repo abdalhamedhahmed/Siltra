@@ -1,13 +1,18 @@
 """
-PDF and Excel Report Generator for Coil Slitting Calculator
+PDF and Excel Report Generator for Coil Slitting Optimizer
 Shared data builder so PDF and Excel outputs always agree.
 """
 
 from decimal import Decimal, ROUND_HALF_UP
 import math
-from typing import List, Dict, Any, Optional, Tuple
 import os
+import sys
+from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
+
+# Make 'src' importable as a top-level package regardless of CWD,
+# since the package now lives at src/ (flat layout).
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from reportlab.lib.colors import HexColor
 from reportlab.lib.styles import ParagraphStyle
@@ -16,7 +21,10 @@ from reportlab.lib import colors
 from reportlab.graphics import renderPDF
 
 # Import app info for consistent branding
-from slitra.app_info import APP_NAME, FACTORY_NAME, APP_VERSION
+from app_info import APP_NAME, FACTORY_NAME, APP_VERSION
+
+# Core calculation engine (used by build_report_data and cutting-drawing helpers)
+import core
 
 
 # Module-level ParagraphStyles for consistent reuse across PDF export
@@ -660,9 +668,9 @@ def export_pdf(
     story.append(handwrite)
     story.append(Spacer(1, 10))
 
-    # 9. Footer - only "Developed by Abdalhamed | Coil Slitting Calculator v3.7.1"
+    # 9. Footer - only "Developed by Abdalhamed | Coil Slitting Optimizer v3.7.1"
     # Build ID goes in PDF metadata (Subject) instead
-    footer_text = f"Developed by Abdalhamed | Coil Slitting Calculator v{version}"
+    footer_text = f"Developed by Abdalhamed | Coil Slitting Optimizer v{version}"
 
     # Two-pass page numbering: first pass to count pages, second pass to render with total
     def build_pdf_with_page_numbers():
@@ -1057,169 +1065,6 @@ def export_pdf(
         # Build story again for actual PDF (story is consumed by first build)
         story_for_pdf = build_complete_story()
         doc.build(story_for_pdf, onFirstPage=add_page_number, onLaterPages=add_page_number)
-
-    # Build PDF using two-pass page numbering
-    build_pdf_with_page_numbers()
-    return True
-
-    # --- PAGE 2: Top Combinations ---
-
-    # Title band for page 2
-    title2_data = [[
-        Paragraph(f"{FACTORY_NAME} - Top Combinations", title_style),
-        Paragraph(f"Version {version}  |  {now_str}", subtitle_style),
-    ]]
-    title2_table = Table(title2_data, colWidths=[content_w * 0.7, content_w * 0.3])
-    title2_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), hex_color(REPORT_COLORS['title_band'])),
-        ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('LEFTPADDING', (0, 0), (-1, -1), 12),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 12),
-    ]))
-    story.append(title2_table)
-    story.append(Spacer(1, 8))
-
-    # Get top combinations - use filtered or all
-    combos = report_data.get('all_combinations', [])
-    if not combos:
-        combos = report_data.get('filtered_combinations', [])
-
-    # Sort by scrap then strips
-    combos = sorted(combos, key=lambda x: (x.get('scrap_mm', 9999), x.get('total_strips', 9999)))
-
-    TOP_N_PDF = 25
-    top_combos = combos[:TOP_N_PDF]
-    is_capped = len(combos) > TOP_N_PDF or report_data.get('stopped_early', False)
-
-    # Build combinations table
-    # Columns: Rank, Qty per size..., Total width, Scrap mm, Scrap %, Total strips, Mix to scale
-    num_sizes = len(strip_sizes)
-
-    # Calculate column widths
-    col_rank = 40
-    col_qty = 50 * num_sizes
-    col_width = 60
-    col_scrap_mm = 50
-    col_scrap_pct = 50
-    col_strips = 50
-    col_mix = 140
-
-    remaining = content_w - col_rank - col_qty - col_width - col_scrap_mm - col_scrap_pct - col_strips - col_mix
-    if remaining > 0:
-        col_qty += remaining * 0.5
-        col_mix += remaining * 0.5
-
-    # Headers
-    headers = [Paragraph("<b>Formula</b>", ParagraphStyle('h', parent=table_cell_style, fontSize=7, alignment=TA_CENTER))]
-    for i, size in enumerate(strip_sizes):
-        color = REPORT_COLORS[f'strip_{i}'] if i < 7 else '#000000'
-        headers.append(Paragraph(
-            f'<b><font color="{color}">{int(size)}mm</font></b>',
-            ParagraphStyle('h', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)
-        ))
-    headers.extend([
-        Paragraph("<b>Width<br/>(mm)</b>", ParagraphStyle('h', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
-        Paragraph("<b>Scrap<br/>(mm)</b>", ParagraphStyle('h', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
-        Paragraph("<b>Scrap<br/>(%)</b>", ParagraphStyle('h', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
-        Paragraph("<b>Strips</b>", ParagraphStyle('h', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
-        Paragraph("<b>Mix to scale</b>", ParagraphStyle('h', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
-    ])
-
-    combos_table_data = [headers]
-
-    for idx, combo in enumerate(top_combos):
-        is_best = combo.get('is_best', False)
-        is_selected = combo == selected
-        row_rank = combo.get('rank', idx + 1)
-
-        row = []
-        rank_text = "F%d" % row_rank
-        if is_best:
-            rank_text += " Best"
-        if is_selected and not is_best:
-            rank_text += " Selected"
-        row.append(Paragraph(rank_text, ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)))
-
-        qs = combo.get('qs', [])
-        for j, qty in enumerate(qs):
-            row.append(Paragraph(str(qty), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)))
-
-        row.append(Paragraph(f"{combo.get('total_width', 0):.0f}", ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)))
-        row.append(Paragraph(f"{combo.get('scrap_mm', 0):.0f}", ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)))
-        row.append(Paragraph(f"{combo.get('scrap_pct', 0):.2f}", ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)))
-        row.append(Paragraph(str(combo.get('total_strips', 0)), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)))
-
-        # Mix to scale - create a drawing
-        mix_drawing = _create_mix_bar(combo, strip_sizes, col_mix)
-        row.append(mix_drawing)
-
-        combos_table_data.append(row)
-
-    # If selected is not in top 25, add separator and selected row
-    if selected not in top_combos:
-        # Separator row
-        sep_row = [Paragraph("...", ParagraphStyle('s', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)) for _ in headers]
-        combos_table_data.append(sep_row)
-
-        # Selected row
-        is_best = selected.get('is_best', False)
-        row_rank = selected.get('rank', len(combos))
-        row = []
-        rank_text = str(row_rank)
-        if is_best:
-            rank_text += " Best"
-        rank_text += " Selected"
-        row.append(Paragraph(rank_text, ParagraphStyle('r', parent=body_style, fontSize=7, alignment=TA_CENTER, fontName='Helvetica-Bold')))
-
-        qs = selected.get('qs', [])
-        for j, qty in enumerate(qs):
-            row.append(Paragraph(str(qty), ParagraphStyle('r', parent=body_style, fontSize=7, alignment=TA_CENTER)))
-
-        row.append(Paragraph(f"{selected.get('total_width', 0):.0f}", ParagraphStyle('r', parent=body_style, fontSize=7, alignment=TA_CENTER)))
-        row.append(Paragraph(f"{selected.get('scrap_mm', 0):.0f}", ParagraphStyle('r', parent=body_style, fontSize=7, alignment=TA_CENTER)))
-        row.append(Paragraph(f"{selected.get('scrap_pct', 0):.2f}", ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)))
-        row.append(Paragraph(str(selected.get('total_strips', 0)), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)))
-        row.append(_create_mix_bar(selected, strip_sizes, col_mix))
-
-        combos_table_data.append(row)
-
-    # Use KeepTogether to prevent orphan rows
-    from reportlab.platypus import KeepTogether
-    combos_table = Table(combos_table_data, colWidths=[
-        col_rank, *( [col_qty // max(1, num_sizes)] * num_sizes ),
-        col_width, col_scrap_mm, col_scrap_pct, col_strips, col_mix
-    ])
-
-    # Build table style
-    table_style_cmds = [
-        ('BACKGROUND', (0, 0), (-1, 0), hex_color(REPORT_COLORS['section_header'])),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, -1), 7),
-        ('TOPPADDING', (0, 0), (-1, -1), 3),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-        ('GRID', (0, 0), (-1, -1), 0.5, hex_color(REPORT_COLORS['table_borders'])),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, hex_color(REPORT_COLORS['zebra_rows'])]),
-    ]
-
-    # Highlight best row
-    if len(top_combos) > 0:
-        table_style_cmds.append(('BACKGROUND', (0, 1), (-1, 1), hex_color(REPORT_COLORS['best_row'])))
-
-    combos_table.setStyle(TableStyle(table_style_cmds))
-    story.append(combos_table)
-    story.append(Spacer(1, 8))
-
-    # Info line if capped
-    if is_capped:
-        info_text = f"Showing top {TOP_N_PDF} of {true_N:,} combinations. The full list is in the Excel file."
-        story.append(Paragraph(info_text, ParagraphStyle('info', parent=body_style, fontSize=8, textColor=colors.grey, alignment=TA_CENTER)))
-    else:
-        story.append(Paragraph(f"Showing all {len(combos):,} combinations", ParagraphStyle('info', parent=body_style, fontSize=8, textColor=colors.grey, alignment=TA_CENTER)))
 
     # Build PDF using two-pass page numbering
     build_pdf_with_page_numbers()
@@ -2016,8 +1861,8 @@ def export_excel(
     ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
     current_row += 2
 
-    # Footer - only "Developed by Abdalhamed | Coil Slitting Calculator v3.7.1" (build ID in PDF metadata only)
-    footer_text = f"Developed by Abdalhamed | Coil Slitting Calculator v{version}"
+    # Footer - only "Developed by Abdalhamed | Coil Slitting Optimizer v3.7.1" (build ID in PDF metadata only)
+    footer_text = f"Developed by Abdalhamed | Coil Slitting Optimizer v{version}"
     set_cell(ws1, current_row, 1, footer_text, Font(name='Calibri', size=7, color='808080'), None, Alignment(horizontal='center'))
     ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
 

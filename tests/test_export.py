@@ -1,12 +1,17 @@
+import os
+import sys
 import tkinter as tk
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
 root = tk.Tk()
 root.withdraw()
 
 # Import using new architecture
-from slitra.slitra_window import MainWindow
-from slitra.slitra_controller import SlitraController
-from slitra.core import find_all_combinations, calculate_combination_details
-from slitra.app_info import APP_VERSION as VERSION
+from slitra_window import MainWindow
+from slitra_controller import SlitraController
+from core import find_all_combinations, calculate_combination_details
+from app_info import APP_VERSION as VERSION
 
 app = MainWindow()
 controller = SlitraController(app)

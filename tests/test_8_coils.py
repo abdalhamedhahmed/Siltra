@@ -5,11 +5,11 @@ import sys
 import os
 import time
 
-sys.path.insert(0, r'C:\Users\Abdalhamed Ahmed\Desktop\fac-1327')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from PySide6.QtWidgets import QApplication
-from slitra.slitra_window import MainWindow
-from slitra.slitra_controller import SlitraController
+from slitra_window import MainWindow
+from slitra_controller import SlitraController
 
 
 def test_8_coils():

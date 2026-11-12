@@ -33,8 +33,12 @@ from PySide6.QtWidgets import (QAbstractItemDelegate, QAbstractItemView, QApplic
                                QWidget, QScrollArea, QTableView, QMenu)
 from array import array
 
+# Make 'slitra' importable as a top-level package regardless of CWD,
+# since the package lives at src/slitra/ but imports use 'from slitra import ...'.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 # ---------------------------------------------------------------- import app info
-from slitra.app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES
+from app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES
 
 # ---------------------------------------------------------------- colors (fixed hex, light mode only)
 RED = "#D32F2F"
@@ -110,8 +114,8 @@ NAV_QSS = ("QPushButton{background:#FFFFFF;color:%s;border:1px solid #AEB7C2;bor
            "QPushButton:hover{background:#F2F4F7;}QPushButton:disabled{color:#B8C0CC;border-color:#DDE2E8;}" % INK)
 
 
-from slitra.view_models import plan_vm, plan_text
-from slitra.state import MemoryStore
+from view_models import plan_vm, plan_text
+from state import MemoryStore
 
 
 class CompareDialog(QDialog):
@@ -823,7 +827,7 @@ class ResultsHistory:
 
 
 # ---------------------------------------------------------------- import app info
-from slitra.app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES
+from app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES
 
 
 # ---------------------------------------------------------------- small painted widgets
@@ -2248,7 +2252,7 @@ def get_resource_path(filename):
     try:
         base_path = sys._MEIPASS
     except Exception:
-        base_path = os.path.abspath(".")
+        base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, filename)
 
 

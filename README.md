@@ -1,10 +1,6 @@
-# Slitra — Coil Slitting Calculator
+# siltra - Coil Slitting Optimizer
 
 **A professional PySide6 desktop application for optimizing coil slitting patterns to minimize scrap waste.**
-
----
-
-## Overview
 
 Slitra helps steel service centers and slitting operations calculate the optimal way to cut master coils into narrower strips. Given a coil width, available strip sizes, and quantity requirements, it finds all valid cutting combinations — ranked by scrap percentage — so operators can choose the most material-efficient pattern.
 
@@ -22,12 +18,11 @@ Slitra helps steel service centers and slitting operations calculate the optimal
 - **Coil weight & strip size independence** — changing coil count no longer affects strip fields (and vice versa)
 - **Configurable scrap limits** — min/max scrap (mm), at-least-once constraint per size
 
-### Professional UI (PySide6 Rewrite v4.1.1)
-- **Fixed-layout panels** — 330px input panel, 1px separator, expanding results panel
-- **Dark/Light theme switching** — instant, no restart, exact color matching to reference design
+### Professional UI (PySide6 v4.1.1)
+- **Fixed-layout panels** — input panel, 1px separator, expanding results panel
+- **Dark/Light theme switching** — instant, no restart
 - **Background calculations** — QThread prevents UI freeze during large searches
 - **Progress indication** — live combination count, cancelable operations
-- **Responsive design** — tested at 4 viewport widths (1280–1920)
 
 ### Results & Comparison
 - **Formula naming** — results shown as "Formula F1", "F2", "F3", "F4" (not "Rank 1/2/3")
@@ -46,8 +41,7 @@ Slitra helps steel service centers and slitting operations calculate the optimal
 - **Preset system** — save/load complete input configurations as JSON
 
 ### Testing & Quality
-- **Skeleton self-check** — `--check` flag renders UI at 4 sizes × 2 states, saves reference PNGs
-- **Golden test fixtures** — 20+ test cases with expected outputs (PDF/Excel)
+- **Golden test fixtures** — test cases with expected outputs (PDF/Excel)
 - **Baseline verification** — ensures calculation parity with original engine
 
 ---
@@ -77,11 +71,11 @@ src/slitra/
 ## Installation & Usage
 
 ### From Source
+
 ```bash
-git clone https://github.com/<org>/slitra.git
 cd slitra
-pip install -e .
-slitra                    # or: python -m src.slitra.slitra_controller
+export PYTHONPATH=src
+python -m slitra.slitra_controller
 ```
 
 ### Requirements
@@ -92,19 +86,10 @@ slitra                    # or: python -m src.slitra.slitra_controller
 
 ### Command Line
 ```bash
-python -m src.slitra.slitra_controller       # Run application
-python -m src.slitra.slitra_window --check   # UI skeleton self-test (saves PNGs)
+export PYTHONPATH=src
+python -m slitra.slitra_controller   # Run application
+python -m slitra.slitra_window --check  # UI skeleton self-test
 ```
-
----
-
-## Screenshots
-
-| Light Theme | Dark Theme |
-|-------------|------------|
-| ![Light](assets/screenshots/1920x1008_one.png) | ![Dark](assets/screenshots/1920x1008_many.png) |
-
-*Additional reference screenshots in `assets/screenshots/`, `skeleton_screenshots/`, `skeleton_screenshots_arabic/`*
 
 ---
 
@@ -112,25 +97,18 @@ python -m src.slitra.slitra_window --check   # UI skeleton self-test (saves PNGs
 
 ### Run Tests
 ```bash
+export PYTHONPATH=src
 python -m pytest tests/
-```
-
-### Build Executable (PyInstaller)
-```bash
-pyinstaller assets/CoilSlittingCalculator.spec
-# Output: dist/CoilSlittingCalculator.exe
+# Or run the full verification suite directly:
+python tests/test_all.py
 ```
 
 ### Project Structure
 ```
 ├── src/slitra/           # Main package (8 Python files)
 ├── tests/                # Test suite + fixtures + golden files
-├── assets/               # Specs, presets, reference screenshots
 ├── dev_tools/            # UI checks, parity audits, screenshot tools
-├── docs/                 # Documentation
-├── skeleton_screenshots/ # UI regression baselines
-├── pyproject.toml        # Build config, dependencies
-└── README.md             # This file
+├── README.md             # This file
 ```
 
 ---

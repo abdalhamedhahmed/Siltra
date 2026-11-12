@@ -14,8 +14,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
 from PySide6.QtGui import QFont
 
-from slitra.slitra_window import MainWindow, apply_light_palette, plan_vm, CompareDialog
-from slitra.state import MemoryStore
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
+from slitra_window import MainWindow, apply_light_palette, plan_vm, CompareDialog
+from state import MemoryStore
 
 
 def build_cw_vm(scrap, qty, width=1290, sizes=None, avg=10000.0, coils=3):

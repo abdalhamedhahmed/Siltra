@@ -23,19 +23,23 @@ import time
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, Any, List, Optional, Tuple
 
+# Make src/ importable as a top-level package regardless of CWD,
+# since the package now lives flat at src/ and imports use 'from app_info import ...'.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from PySide6.QtCore import QObject, Signal, Slot, QThread, QTimer
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from PySide6.QtGui import QGuiApplication
 
 # Local imports
-from slitra.app_info import (
+from app_info import (
     APP_NAME, FACTORY_NAME, APP_VERSION,
     DEFAULT_MIN_SCRAP, DEFAULT_MAX_SCRAP, DEFAULT_AT_LEAST_ONCE
 )
-from slitra import core
-from slitra import reports
-from slitra import view_models
-from slitra.state import MemoryStore
+import core
+import reports
+import view_models
+from state import MemoryStore
 
 
 class CalculationWorker(QObject):
@@ -568,7 +572,7 @@ Formula F1 (best combination):
 
 def create_app_and_window():
     """Factory function to create QApplication, window, and controller."""
-    from .slitra_window import MainWindow, apply_light_palette
+    from slitra_window import MainWindow, apply_light_palette
 
     app = QApplication(sys.argv)
     apply_light_palette(app)

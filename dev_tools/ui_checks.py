@@ -7,7 +7,7 @@ Checks: startup, CASE W, and 7-size 3-coil case.
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 
 from PySide6.QtWidgets import QApplication, QWidget, QLabel, QCheckBox, QPushButton
 from PySide6.QtCore import Qt, QTimer
@@ -15,11 +15,8 @@ from PySide6.QtGui import QFont, QFontInfo
 from PySide6.QtTest import QTest
 import json
 
-# Import the NEW Slitra app
 from slitra_window import MainWindow, apply_light_palette, SCRAP_RED, SIZE_COLORS
 from slitra_controller import SlitraController
-# Import ColorPalette from ui_qt for audit
-from ui_qt import ColorPalette
 
 
 class UIChecks:

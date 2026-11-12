@@ -43,8 +43,9 @@ TEST_STATES = [
 
 # Paths
 REPO_ROOT = Path(__file__).parent.parent
-SKELETON_SCRIPT = REPO_ROOT / "slitra_window.py"
-NEW_WINDOW_SCRIPT = REPO_ROOT / "ui_qt.py"
+SRC_SLITRA = REPO_ROOT / "src" / "slitra"
+SKELETON_SCRIPT = REPO_ROOT / "src" / "slitra_window.py"
+NEW_WINDOW_SCRIPT = REPO_ROOT / "src" / "slitra_window.py"
 SKELETON_OUT_DIR = REPO_ROOT / "skeleton_screenshots"
 NEW_WINDOW_OUT_DIR = REPO_ROOT / "new_window_screenshots"
 COMPARE_OUT_DIR = REPO_ROOT / "comparison_results"

@@ -22,8 +22,8 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtTest import QTest
 from PySide6.QtGui import QFont
 
-from slitra.slitra_window import MainWindow, apply_light_palette, plan_vm, CompareDialog, FilterDialog
-from slitra.state import MemoryStore
+from slitra_window import MainWindow, apply_light_palette, plan_vm, CompareDialog, FilterDialog
+from state import MemoryStore
 
 results = []
 

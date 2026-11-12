@@ -3,9 +3,11 @@
 
 import sys
 import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+
 from PySide6.QtWidgets import QApplication
-from slitra.slitra_window import MainWindow
-from slitra.slitra_controller import SlitraController
+from slitra_window import MainWindow
+from slitra_controller import SlitraController
 import time
 
 
