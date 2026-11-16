@@ -1574,10 +1574,11 @@ class MaterialCombo(QComboBox):
 
     def __init__(self, items):
         super().__init__()
-        self.setFixedHeight(26)
+        self.setFixedSize(100, 26)
         self.setFont(make_font(9, QFont.Weight.Medium))
         self.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.setMinimumContentsLength(20)
+        self.setStyleSheet(EDIT_QSS)
 
         # Add placeholder (no selection on launch)
         self.addItem("Select material type...")
