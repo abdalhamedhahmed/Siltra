@@ -58,6 +58,7 @@ class CalculationWorker(QObject):
     def run(self):
         results = []
         stopped_early = False
+        error_msg = None
         try:
             # Use unbounded version - finds ALL combinations (no 1M cap)
             results, stopped_early = core.find_all_combinations(
@@ -70,10 +71,16 @@ class CalculationWorker(QObject):
                 cancel_flag=self.cancel_flag
             )
         except Exception as e:
-            self.error.emit(str(e))
+            error_msg = str(e)
+            self.error.emit(error_msg)
         finally:
-            # Always emit finished so the UI can recover from cancellation
-            self.finished.emit(results, stopped_early, len(results))
+            # Only emit finished if no error occurred; error signal is sufficient
+            if error_msg is None:
+                self.finished.emit(results, stopped_early, len(results))
+            else:
+                # Still emit finished with empty results so UI can recover from error
+                # But with a flag indicating error state
+                self.finished.emit([], stopped_early, 0)
 
     def cancel(self):
         self.cancel_flag.set()
@@ -408,7 +415,7 @@ class SlitraController(QObject):
             )
 
             # Update TopBar with the new job number
-            self.window.topbar.job_number_badge.setText(job_number)
+            self.window.topbar.set_job(job_number)
             self.job_number_changed.emit(job_number)
 
             # Build report data with job number and order phase
@@ -732,6 +739,7 @@ def create_app_and_window():
 
     window = MainWindow()
     controller = SlitraController(window)
+    window._controller = controller
 
     return app, window, controller
 

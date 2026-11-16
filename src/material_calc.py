@@ -47,10 +47,11 @@ class CoilWeightCalculator:
         """
         Calculate theoretical length from total weight.
         length_m = total_weight_kg * 1000 / (width_mm * thickness_mm * density)
+        Raises ValueError if width_mm <= 0, thickness_mm <= 0, or density <= 0.
         """
         density = cls.get_density(material)
         if width_mm <= 0 or thickness_mm <= 0 or density <= 0:
-            return 0.0
+            raise ValueError("width, thickness, and density must be positive")
         return (total_weight_kg * 1000.0) / (width_mm * thickness_mm * density)
 
     @classmethod

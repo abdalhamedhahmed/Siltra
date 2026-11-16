@@ -188,7 +188,7 @@ def build_report_data(
             'size': size,
             'qty_per_coil': qty,
             'qty_total': qty * num_coils,
-            'color': REPORT_COLORS[f'strip_{i}'] if i < len(REPORT_COLORS) else '#000000',
+            'color': REPORT_COLORS[f'strip_{i}'] if i < 7 else '#000000',
         })
 
     # Add scrap data if scrap > 0

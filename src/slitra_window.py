@@ -1225,7 +1225,6 @@ OUTLINE_QSS = ("QPushButton{background:#FFFFFF;color:%s;border:1px solid #AEB7C2
 PRIMARY_QSS = ("QPushButton{background:%s;color:#FFFFFF;border:1px solid %s;border-radius:4px;padding:0 14px;}"
                "QPushButton:hover{background:#B71C1C;}" % (RED, RED))
 
-
 def style_edit(e, w=100):
     e.setFixedSize(w, 26)
     e.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1558,6 +1557,80 @@ class CoilWeightsDialog(QDialog):
         return [v for v in self._values()]
 
 
+class MaterialCombo(QComboBox):
+    """Single-select dropdown for material types. Nothing is selected on launch (placeholder shown).
+    Uses the app's industrial aesthetic. Compatible with MaterialChips API: changed signal, set_value(), value()."""
+    changed = Signal(str)
+
+    # Material color palette for tooltips (steel-themed)
+    MATERIAL_COLORS = {
+        'HR':  ("#B71C1C", "Hot Rolled"),
+        'CR':  ("#3E7CB1", "Cold Rolled"),
+        'GI':  ("#607D8B", "Galvanized Iron"),
+        'GL':  ("#EF9F27", "Galvalume"),
+        'PPCR':("#8E24AA", "Pre-Painted Cold Rolled"),
+        'CRBA':("#424242", "Carbon Reinforced Base Alloy"),
+    }
+
+    def __init__(self, items):
+        super().__init__()
+        self.setFixedHeight(26)
+        self.setFont(make_font(9, QFont.Weight.Medium))
+        self.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.setMinimumContentsLength(20)
+
+        # Add placeholder (no selection on launch)
+        self.addItem("Select material type...")
+        self.setCurrentIndex(0)
+
+        # Add material items
+        for name in items:
+            self.addItem(name)
+
+        # Store mapping for tooltips
+        self._items = items
+        self._value = None  # no selection on launch
+
+        self.currentIndexChanged.connect(self._on_index_changed)
+
+    def _on_index_changed(self, index):
+        if index > 0:  # 0 is placeholder
+            name = self.itemText(index)
+            self._value = name
+            self.changed.emit(name)
+        else:
+            self._value = None
+            self.changed.emit("")
+
+    def set_value(self, name):
+        """Set selection by material name. None or invalid = placeholder."""
+        self._value = name if name in self._items else None
+        if self._value:
+            self.blockSignals(True)
+            self.setCurrentText(self._value)
+            self.blockSignals(False)
+        else:
+            self.blockSignals(True)
+            self.setCurrentIndex(0)
+            self.blockSignals(False)
+
+    def value(self):
+        return self._value
+
+
+# Material types and density (used by MaterialCombo tooltips and InputPanel)
+MATERIAL_DENSITY = {
+    'HR': 7.85,
+    'CR': 7.85,
+    'GI': 7.85,
+    'GL': 7.85,
+    'PPCR': 7.85,
+    'CRBA': 7.85,
+}
+
+MATERIAL_TYPES = list(MATERIAL_DENSITY)
+
+
 class InputPanel(QFrame):
     material_changed = Signal(str)
     thickness_changed = Signal(float)
@@ -1572,6 +1645,7 @@ class InputPanel(QFrame):
         self._mode_inline = None
         self.material_type = "HR"  # default material
         self.consignment_name = "HR"
+        self._theoretical_length_raw = 0.0  # raw float value (no comma formatting)
 
         # Material density map (g/cm³) - all steel types
         self.MATERIAL_DENSITY = {
@@ -1601,10 +1675,10 @@ class InputPanel(QFrame):
         form.addWidget(self.consignment_edit, r, 1)
         r += 1
 
-        # 2. Material Type chip row (6 types)
-        self.material_chip_widget = self._create_material_chip_row()
-        form.addWidget(mk_label("Material Type:"), r, 0)
-        form.addWidget(self.material_chip_widget, r, 1)
+        # 2. Material Type dropdown (6 types) - single-select, no truncation, nothing selected on launch
+        self.material_combo = MaterialCombo(MATERIAL_TYPES)
+        form.addWidget(mk_label("Material type:"), r, 0)
+        form.addWidget(self.material_combo, r, 1)
         r += 1
 
         # 3. Number of Coils
@@ -1636,12 +1710,13 @@ class InputPanel(QFrame):
         form.addWidget(self.summary_row, r, 0, 1, 2)
         r += 1
 
-        # 5. Thickness (mm)
+        # 5. Thickness (mm) - matches skeleton: starts blank (0.0), range 0.10-12.00
         self.thickness_edit = QDoubleSpinBox()
-        self.thickness_edit.setRange(0.001, 50.0)
         self.thickness_edit.setDecimals(3)
+        self.thickness_edit.setRange(0.0, 12.00)
+        self.thickness_edit.setSpecialValueText(" ")       # 0 shows as blank: no pre-entered value on launch
+        self.thickness_edit.setValue(0.0)
         self.thickness_edit.setSingleStep(0.01)
-        self.thickness_edit.setValue(0.5)
         self.thickness_edit.setFixedSize(100, 26)
         self.thickness_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.thickness_edit.setFont(make_font(9.5, QFont.Weight.Medium))
@@ -1650,14 +1725,15 @@ class InputPanel(QFrame):
         form.addWidget(self.thickness_edit, r, 1)
         r += 1
 
-        # 6. Theoretical Length (m) - read-only
-        self.theoretical_length_label = QLabel("— m")
-        self.theoretical_length_label.setFixedHeight(26)
-        self.theoretical_length_label.setFont(make_font(9.5, QFont.Weight.DemiBold))
-        self.theoretical_length_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.theoretical_length_label.setStyleSheet("QLabel{background:#F2F4F7;border:1px solid #AEB7C2;border-radius:3px;padding:0 4px;color:%s;}" % INK)
-        form.addWidget(mk_label("Theoretical Length (m):"), r, 0)
-        form.addWidget(self.theoretical_length_label, r, 1)
+        # 6. Theoretical Length (m) - read-only, live (matches skeleton's len_edit)
+        self.len_label = mk_label("Theoretical length (m):")
+        self.len_edit = style_edit(QLineEdit())
+        self.len_edit.setReadOnly(True)
+        self.len_edit.setStyleSheet(READONLY_QSS)
+        self.len_edit.setText("—")
+        self.len_edit.setToolTip("Weight x 1000 / (width x thickness x density). An estimate from the weight.")
+        form.addWidget(self.len_label, r, 0)
+        form.addWidget(self.len_edit, r, 1)
         r += 1
 
         # 7. Coil Width (mm)
@@ -1726,51 +1802,13 @@ class InputPanel(QFrame):
         self.thickness_edit.valueChanged.connect(self._on_thickness_changed)
         self.width_edit.textChanged.connect(self._recalculate_theoretical_length)
         self.consignment_edit.textChanged.connect(self._recalculate_theoretical_length)
-        for btn, mat in self._material_buttons:
-            btn.clicked.connect(lambda checked, m=mat: self._on_material_changed(m))
+        # Connect material combo changed signal
+        self.material_combo.changed.connect(self._on_material_changed)
+        # Connect avg_edit to recalculate theoretical length (like skeleton's _on_avg_typed)
+        self.avg_edit.textEdited.connect(self._recalculate_theoretical_length)
 
         self._relayout_sizes()
         self.refresh()
-
-    def _create_material_chip_row(self):
-        """Create horizontal chip row with 6 material type buttons."""
-        # Use a scroll area to prevent squeezing
-        from PySide6.QtWidgets import QScrollArea
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setFixedHeight(32)
-        scroll.setStyleSheet("QScrollArea{border:none;background:transparent;}")
-
-        widget = QWidget()
-        layout = QHBoxLayout(widget)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
-
-        self._material_buttons = []
-        materials = ['HR', 'CR', 'GI', 'GL', 'PPCR', 'CRBA']
-        for mat in materials:
-            btn = QPushButton(mat)
-            btn.setCheckable(True)
-            btn.setFixedHeight(26)
-            btn.setFont(make_font(9, QFont.Weight.Medium))
-            # Wider padding for longer names (PPCR, CRBA)
-            padding = "0 16px" if len(mat) > 3 else "0 12px"
-            btn.setStyleSheet("""
-                QPushButton{background:#FFFFFF;color:%s;border:1px solid #AEB7C2;border-radius:4px;padding:%s;}
-                QPushButton:checked{background:%s;color:#FFFFFF;border:1px solid %s;}
-                QPushButton:hover:!checked{background:#F2F4F7;}
-            """ % (INK, padding, RED, RED))
-            layout.addWidget(btn)
-            self._material_buttons.append((btn, mat))
-
-        # Set default (HR)
-        self._material_buttons[0][0].setChecked(True)
-        layout.addStretch(1)
-
-        scroll.setWidget(widget)
-        return scroll
 
     def _on_material_changed(self, material):
         """Handle material type change - update consignment and theoretical length."""
@@ -1792,31 +1830,44 @@ class InputPanel(QFrame):
         self._recalculate_theoretical_length()
 
     def _recalculate_theoretical_length(self):
-        """Recalculate theoretical length from total weight, width, thickness, and material density."""
+        """Recalculate theoretical length from total weight, width, thickness, and material density.
+        Matches skeleton: length_m = total_weight * 1000 / (width_mm * thickness_mm * density)
+        """
         try:
+            n = self._count()
             total_weight = self.get_avg() * self.get_coils()
             width = self.get_width()
             thickness = self.thickness_edit.value()
-            density = self.MATERIAL_DENSITY.get(self.material_type, 7.85)
+            material = self.material_combo.value() or self.material_type
+            density = self.MATERIAL_DENSITY.get(material, 7.85)
 
-            if width > 0 and thickness > 0 and total_weight > 0:
-                # Length (m) = weight_kg * 1e6 / (width_mm * thickness_mm * density_g_cm3)
-                length_m = (total_weight * 1_000_000) / (width * thickness * density)
-                self.theoretical_length_label.setText(f"{length_m:.1f} m")
+            if width > 0 and thickness > 0 and total_weight > 0 and material:
+                # Length (m) = weight_kg * 1000 / (width_mm * thickness_mm * density_g_cm3)
+                length_m = (total_weight * 1000.0) / (width * thickness * density)
+                self._theoretical_length_raw = length_m
+                self.len_edit.setText("{:,.1f}".format(length_m))
+                # Update label based on coil count (matches skeleton)
+                self.len_label.setText("Avg length/coil (m):" if n >= 2 else "Theoretical length (m):")
                 self.theoretical_length_changed.emit(length_m)
             else:
-                self.theoretical_length_label.setText("— m")
+                self._theoretical_length_raw = 0.0
+                self.len_edit.setText("—")
+                self.len_label.setText("Theoretical length (m):")
                 self.theoretical_length_changed.emit(0.0)
         except Exception:
-            self.theoretical_length_label.setText("— m")
+            self._theoretical_length_raw = 0.0
+            self.len_edit.setText("—")
+            self.len_label.setText("Theoretical length (m):")
             self.theoretical_length_changed.emit(0.0)
 
     def set_theoretical_length(self, length_m):
         """Set theoretical length from controller (e.g., after calculation)."""
         if length_m > 0:
-            self.theoretical_length_label.setText(f"{length_m:.1f} m")
+            self._theoretical_length_raw = length_m
+            self.len_edit.setText("{:,.1f}".format(length_m))
         else:
-            self.theoretical_length_label.setText("— m")
+            self._theoretical_length_raw = 0.0
+            self.len_edit.setText("—")
 
     def set_consignment(self, consignment: str):
         """Set consignment from controller (e.g., after material change)."""
@@ -1968,10 +2019,11 @@ class InputPanel(QFrame):
             # Reset new fields
             self.consignment_edit.clear()
             self.thickness_edit.setValue(0.5)
-            self._material_buttons[0][0].setChecked(True)
+            self.material_combo.set_value(None)  # None = no selection on launch
             self.material_type = "HR"
             self.consignment_name = "HR"
-            self.theoretical_length_label.setText("— m")
+            self.len_edit.setText("—")
+            self.len_label.setText("Theoretical length (m):")
             return
         self.apply_weights([float(w) for w in cfg["weights"]])
         self.sizes_box.setCurrentText(str(len(cfg["sizes"])))
@@ -1990,11 +2042,7 @@ class InputPanel(QFrame):
             self.consignment_name = cfg["consignment"]
         if "material_type" in cfg:
             self.material_type = cfg["material_type"]
-            # Find and check the corresponding button
-            for btn, mat in self._material_buttons:
-                if mat == cfg["material_type"]:
-                    btn.setChecked(True)
-                    break
+            self.material_combo.set_value(cfg["material_type"])
         if "thickness" in cfg:
             self.thickness_edit.setValue(cfg["thickness"])
 
@@ -2021,26 +2069,49 @@ class InputPanel(QFrame):
         return [v if v is not None else 0 for v in self.weights]
 
     def get_width(self):
-        return int(self.width_edit.text()) if self.width_edit.text() else 0
+        try:
+            return int(self.width_edit.text()) if self.width_edit.text() else 0
+        except ValueError:
+            return 0
 
     def get_avg(self):
         if self._count() <= 1:
-            return float(self.avg_edit.text()) if self.avg_edit.text() else 0.0
+            try:
+                return float(self.avg_edit.text()) if self.avg_edit.text() else 0.0
+            except ValueError:
+                return 0.0
         vals = [v for v in self.weights if v]
         return sum(vals) / len(vals) if vals else 0.0
 
     def get_sizes_count(self):
-        return int(self.sizes_box.currentText())
+        try:
+            return int(self.sizes_box.currentText())
+        except ValueError:
+            return 0
 
     def get_sizes(self):
         n = self.get_sizes_count()
-        return [int(self.size_edits[i].text()) if self.size_edits[i].text() else 0 for i in range(n)]
+        sizes = []
+        for i in range(n):
+            try:
+                v = int(self.size_edits[i].text()) if self.size_edits[i].text() else 0
+                if v > 0:
+                    sizes.append(v)
+            except ValueError:
+                pass
+        return sizes
 
     def get_smin(self):
-        return int(self.smin_edit.text()) if self.smin_edit.text() else 0
+        try:
+            return int(self.smin_edit.text()) if self.smin_edit.text() else 0
+        except ValueError:
+            return 0
 
     def get_smax(self):
-        return int(self.smax_edit.text()) if self.smax_edit.text() else 0
+        try:
+            return int(self.smax_edit.text()) if self.smax_edit.text() else 0
+        except ValueError:
+            return 0
 
     def get_every(self):
         return self.every.isChecked()
@@ -2058,7 +2129,7 @@ class InputPanel(QFrame):
             "consignment": self.consignment_edit.text().strip(),
             "material_type": self.material_type,
             "thickness": self.thickness_edit.value(),
-            "theoretical_length_m": float(self.theoretical_length_label.text().replace(" m", "")) if self.theoretical_length_label.text() != "— m" else 0.0,
+            "theoretical_length_m": self._theoretical_length_raw,
         }
         return params
 
@@ -2516,7 +2587,7 @@ LogoMark = LogoWidget
 class TopBar(QFrame):
     # name, full text, compact text
     SPEC = [("Calculate", "Calculate", "Calculate"), ("Cancel", "Cancel", "✕"), ("Clear", "Clear", "⌫"),
-            ("Export Job Order", "Export Job Order", "Job Order"),
+            ("Export Job Order", "Export Job Order", "Export"),
             ("Save Preset", "Save Preset", "Save"), ("Load Preset", "Load Preset", "Load"),
             ("View Log", "View Log", "Log")]
 
@@ -2541,6 +2612,17 @@ class TopBar(QFrame):
         tb.addStretch(1)
         lay.addLayout(tb)
         lay.addStretch(1)
+        # Order phase + job number: describe the whole job, so they sit with the buttons.
+        self.phase_combo = make_combo(["Initial Job Order", "Final Job Order"], 140)
+        self.phase_combo.setFixedHeight(32)
+        self.phase_combo.setToolTip("Initial = editable draft, no job number. Final = locks the inputs and assigns a job number (printed on the PDF).")
+        lay.addWidget(self.phase_combo)
+        self.job_badge = QLabel("")
+        self.job_badge.setFixedSize(150, 32)
+        self.job_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.job_badge.setFont(make_font(9, QFont.Weight.Medium))
+        lay.addWidget(self.job_badge)
+        self.set_job(None)
         self.buttons = {}
         for name, _full, _short in self.SPEC:
             b = QPushButton(name)
@@ -2549,26 +2631,21 @@ class TopBar(QFrame):
             b.setStyleSheet(PRIMARY_QSS if name == "Calculate" else OUTLINE_QSS)
             lay.addWidget(b)
             self.buttons[name] = b
-
-        # Order Phase dropdown (left of Export button)
-        self.phase_combo = QComboBox()
-        self.phase_combo.addItems(["Initial Job Order", "Final Job Order"])
-        self.phase_combo.setFixedSize(160, 32)
-        self.phase_combo.setFont(make_font(9, QFont.Weight.Medium))
-        self.phase_combo.setStyleSheet("QComboBox{background:#FFFFFF;border:1px solid #AEB7C2;border-radius:4px;padding:0 10px;}"
-                                       "QComboBox:hover{border:1px solid %s;}" % RED)
-        self.phase_combo.currentTextChanged.connect(self.job_phase_changed.emit)
-        lay.addWidget(self.phase_combo)
-
-        # Job Number badge (right of Export button)
-        self.job_number_badge = QLabel("J-2026-0001")
-        self.job_number_badge.setFixedHeight(32)
-        self.job_number_badge.setFont(make_font(9, QFont.Weight.DemiBold))
-        self.job_number_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.job_number_badge.setStyleSheet("QLabel{background:#1F2933;color:#FFFFFF;border-radius:4px;padding:0 10px;}")
-        lay.addWidget(self.job_number_badge)
-
         self.compact = False
+
+    def set_job(self, number):
+        """Job number badge: muted while Initial (no number yet), accent colour once the job is Final."""
+        if number:
+            self.job_badge.setText(number)
+            self.job_badge.setToolTip("Job number of this Final Job Order")
+            self.job_badge.setStyleSheet("QLabel{background:#FDECEC;color:%s;border:1px solid %s;border-radius:4px;}" % (RED, RED))
+        else:
+            self.job_badge.setText("No job number")
+            self.job_badge.setToolTip("A job number is assigned when the order is made Final")
+            self.job_badge.setStyleSheet("QLabel{background:#F2F4F7;color:%s;border:1px solid %s;border-radius:4px;}" % (MUTED, LINE))
+
+    def job_text(self):
+        return self.job_badge.text()
 
     def set_compact(self, compact):
         if compact == self.compact:
@@ -2706,6 +2783,15 @@ class MainWindow(QMainWindow):
         w = self.width()
         self.left.setFixedWidth(max(300, min(380, int(w * 0.28))))
         self.topbar.set_compact(w < 1100)
+
+    def closeEvent(self, e):
+        """Clean up calculation thread on window close."""
+        ctrl = getattr(self, '_controller', None)
+        if ctrl is not None and ctrl.calc_thread is not None:
+            ctrl.on_cancel()
+            ctrl.calc_thread.quit()
+            ctrl.calc_thread.wait(3000)
+        super().closeEvent(e)
 
 
 # ---------------------------------------------------------------- layout self-check
