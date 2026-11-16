@@ -44,6 +44,26 @@ from state import MemoryStore
 from slitra_db import SlitraDB
 
 
+def get_db_path():
+    """Return the path to the SQLite database file.
+
+    When running as a compiled EXE (PyInstaller/cx_Freeze), uses
+    %PROGRAMDATA%\\Slitra\\data\\slitra.db so the MSI installer can
+    create the data directory and the app can read/write it without
+    requiring admin rights on the Program Files folder.
+
+    When running from source, falls back to the hardcoded path
+    C:\\Slitra\\data\\slitra.db for backward compatibility.
+    """
+    if getattr(sys, 'frozen', False):
+        base = os.environ.get('PROGRAMDATA', r'C:\ProgramData')
+        db_dir = os.path.join(base, 'Slitra', 'data')
+        os.makedirs(db_dir, exist_ok=True)
+        return os.path.join(db_dir, 'slitra.db')
+    # Development mode: keep original hardcoded path
+    return r"C:\Slitra\data\slitra.db"
+
+
 class CalculationWorker(QObject):
     """Worker thread for long-running combination search."""
     progress = Signal(int)  # combinations found so far
@@ -108,7 +128,7 @@ class SlitraController(QObject):
         self.memory = MemoryStore()
 
         # Database - Phase E: Job Order persistence
-        self.db = SlitraDB(r"C:\Slitra\data\slitra.db")
+        self.db = SlitraDB(get_db_path())
 
         # Settings
         self.settings_path = os.path.join(
@@ -133,6 +153,61 @@ class SlitraController(QObject):
         self.window.show_empty()
         self.window.set_status("Ready")
 
+        # Auto-update check (runs once at startup, then periodically)
+        self._start_update_check()
+
+    def _start_update_check(self):
+        """Start periodic update check."""
+        from app_info import UPDATE_CHECK_URL, UPDATE_CHECK_INTERVAL_HOURS
+        # Check once at startup (delayed to not block UI)
+        QTimer.singleShot(3000, self._check_for_updates)
+        # Then periodically
+        self._update_timer = QTimer(self)
+        self._update_timer.timeout.connect(self._check_for_updates)
+        self._update_timer.start(UPDATE_CHECK_INTERVAL_HOURS * 60 * 60 * 1000)  # ms
+
+    def _check_for_updates(self):
+        """Check GitHub for newer version."""
+        import urllib.request
+        import urllib.error
+        from app_info import APP_VERSION, UPDATE_CHECK_URL
+
+        def parse_version(v):
+            try:
+                return tuple(int(x) for x in v.split('.'))
+            except Exception:
+                return (0, 0, 0)
+
+        try:
+            req = urllib.request.Request(UPDATE_CHECK_URL, headers={'User-Agent': 'Slitra-Updater/1.0'})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                latest = resp.read().decode('utf-8').strip()
+            if not latest:
+                return
+            if parse_version(latest) > parse_version(APP_VERSION):
+                self._show_update_available(latest)
+        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError):
+            # Silently ignore network errors
+            pass
+        except Exception:
+            pass
+
+    def _show_update_available(self, latest_version):
+        """Show non-blocking update notification."""
+        from PySide6.QtWidgets import QMessageBox
+        from app_info import DEVELOPER_URL
+
+        msg = QMessageBox(self.window)
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setWindowTitle("Update Available")
+        msg.setText(f"Slitra {latest_version} is available (you have {APP_VERSION})")
+        msg.setInformativeText(f"Download at:\n{DEVELOPER_URL}")
+        msg.setStandardButtons(QMessageBox.StandardButton.Open | QMessageBox.StandardButton.Ignore)
+        msg.setDefaultButton(QMessageBox.StandardButton.Open)
+        if msg.exec() == QMessageBox.StandardButton.Open:
+            import webbrowser
+            webbrowser.open(DEVELOPER_URL)
+
     def _connect_signals(self):
         """Connect all window signals to controller slots."""
         # Main actions
@@ -142,7 +217,6 @@ class SlitraController(QObject):
         self.window.export_job_order_requested.connect(self.on_export_pdf)
         self.window.save_preset_requested.connect(self.on_save_preset)
         self.window.load_preset_requested.connect(self.on_load_preset)
-        self.window.view_log_requested.connect(self.on_view_log)
 
         # Live parameter updates
         self.window.params_changed.connect(self.on_params_changed)
@@ -155,6 +229,13 @@ class SlitraController(QObject):
         self.window.left.material_changed.connect(self.on_material_changed)
         self.window.left.thickness_changed.connect(self.on_thickness_changed)
         self.window.left.theoretical_length_changed.connect(self.on_theoretical_length_changed)
+        self.window.left.consignment_focused.connect(self.on_consignment_focused)
+
+        # Job Orders signal
+        self.window.show_job_orders_requested.connect(self.on_show_job_orders)
+        self.window.show_coil_stock_requested.connect(self.on_show_coil_stock)
+        self.window.add_coils_to_stock_requested.connect(self.on_add_coils_to_stock)
+        self.window.add_coils_to_stock_requested.connect(self.on_add_coils_to_stock)
 
     # ============================================================
     # SIGNAL HANDLERS
@@ -219,6 +300,49 @@ class SlitraController(QObject):
         """Handle theoretical length update from InputPanel."""
         self.current_params['theoretical_length_m'] = length_m
 
+    @Slot()
+    def on_consignment_focused(self):
+        """Load recent consignments when consignment field gets focus."""
+        try:
+            recent = self.db.recent_consignments(limit=10)
+            if recent:
+                self.window.left.set_recent_consignments(recent)
+        except Exception:
+            pass  # Silently ignore DB errors
+
+    @Slot()
+    def on_show_job_orders(self):
+        """Show the job orders list dialog."""
+        try:
+            jobs = self.db.jobs(limit=100)
+            self.window.show_job_orders(jobs)
+        except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(self.window, "Error", f"Failed to load job orders: {e}")
+
+    @Slot()
+    def on_show_coil_stock(self):
+        """Show the coil stock dashboard."""
+        try:
+            stock = self.db.stock_status()
+            self.window.show_coil_stock(stock)
+        except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(self.window, "Error", f"Failed to load coil stock: {e}")
+
+    @Slot()
+    def on_add_coils_to_stock(self):
+        """Show the add coils to stock dialog."""
+        try:
+            from slitra_window import AddCoilsToStockDialog
+            dlg = AddCoilsToStockDialog(self.db, self.window)
+            if dlg.exec():
+                self.window.set_status("Coils added to stock")
+                # Refresh coil stock if dashboard is open
+        except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(self.window, "Error", f"Failed to open add coils dialog: {e}")
+
     @Slot(str)
     def on_job_phase_changed(self, phase: str):
         """Handle Order Phase change from TopBar."""
@@ -253,6 +377,10 @@ class SlitraController(QObject):
     @Slot(list, bool, int)
     def on_calc_finished(self, results: list, stopped_early: bool, total_combinations: int):
         """Handle calculation completion."""
+        # Guard: if calc_thread already nulled by on_calc_error, ignore
+        if self.calc_thread is None:
+            return
+
         self.is_calculating = False
         self.calc_thread.quit()
         self.calc_thread.wait()

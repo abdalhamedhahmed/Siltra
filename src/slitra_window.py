@@ -20,13 +20,13 @@ import sys
 import time
 
 from PySide6.QtCore import (QLocale, QPoint, QRect, QRectF, QSize, Qt, QTimer, Signal,
-                            QAbstractTableModel, QModelIndex)
+                            QAbstractTableModel, QModelIndex, QStringListModel, QDate)
 from PySide6.QtGui import (QBrush, QColor, QDoubleValidator, QFont, QFontDatabase,
                            QFontMetrics, QGuiApplication, QIntValidator,
                            QPainter, QPainterPath, QPalette, QPen,
                            QPixmap, QShortcut, QKeySequence)
 from PySide6.QtWidgets import (QAbstractItemDelegate, QAbstractItemView, QApplication, QCheckBox,
-                               QComboBox, QDialog, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout,
+                               QComboBox, QCompleter, QDateEdit, QDialog, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout,
                                QHeaderView, QLabel, QLineEdit, QMainWindow,
                                QPushButton, QSizePolicy, QSpinBox, QStyledItemDelegate,
                                QTableWidget, QTableWidgetItem, QVBoxLayout,
@@ -1636,6 +1636,7 @@ class InputPanel(QFrame):
     material_changed = Signal(str)
     thickness_changed = Signal(float)
     theoretical_length_changed = Signal(float)
+    consignment_focused = Signal()
 
     def __init__(self):
         super().__init__()
@@ -1803,6 +1804,7 @@ class InputPanel(QFrame):
         self.thickness_edit.valueChanged.connect(self._on_thickness_changed)
         self.width_edit.textChanged.connect(self._recalculate_theoretical_length)
         self.consignment_edit.textChanged.connect(self._recalculate_theoretical_length)
+        self.consignment_edit.focusInEvent = self._on_consignment_focus
         # Connect material combo changed signal
         self.material_combo.changed.connect(self._on_material_changed)
         # Connect avg_edit to recalculate theoretical length (like skeleton's _on_avg_typed)
@@ -1810,6 +1812,11 @@ class InputPanel(QFrame):
 
         self._relayout_sizes()
         self.refresh()
+
+    def _on_consignment_focus(self, e):
+        """Emit signal when consignment field gains focus, so recent names load."""
+        QLineEdit.focusInEvent(self.consignment_edit, e)
+        self.consignment_focused.emit()
 
     def _on_material_changed(self, material):
         """Handle material type change - update consignment and theoretical length."""
@@ -1874,6 +1881,22 @@ class InputPanel(QFrame):
         """Set consignment from controller (e.g., after material change)."""
         self.consignment_edit.setText(consignment)
         self.consignment_name = consignment
+
+    def set_recent_consignments(self, recent: list):
+        """Set up autocomplete for recent consignments on the consignment field."""
+        if not recent:
+            return
+        # Remove existing completer if any
+        completer = self.consignment_edit.findChild(QCompleter)
+        if completer is not None:
+            self.consignment_edit.removeEventFilter(completer.widget() if hasattr(completer, 'widget') else completer)
+        from PySide6.QtWidgets import QCompleter
+        model = QStringListModel(recent)
+        completer = QCompleter(model)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setCompletionMode(QCompleter.PopupCompletion)
+        completer.setFilterMode(Qt.MatchContains)
+        self.consignment_edit.setCompleter(completer)
 
     # -- coil count and weights
     def _count(self):
@@ -2019,7 +2042,7 @@ class InputPanel(QFrame):
             self._update_fit()
             # Reset new fields
             self.consignment_edit.clear()
-            self.thickness_edit.setValue(0.5)
+            self.thickness_edit.setValue(0.0)
             self.material_combo.set_value(None)  # None = no selection on launch
             self.material_type = "HR"
             self.consignment_name = "HR"
@@ -2589,8 +2612,9 @@ class TopBar(QFrame):
     # name, full text, compact text
     SPEC = [("Calculate", "Calculate", "Calculate"), ("Cancel", "Cancel", "✕"), ("Clear", "Clear", "⌫"),
             ("Export Job Order", "Export Job Order", "Export"),
-            ("Save Preset", "Save Preset", "Save"), ("Load Preset", "Load Preset", "Load"),
-            ("View Log", "View Log", "Log")]
+            ("View Job Orders", "View Job Orders", "Jobs"), ("View Coil Stock", "View Coil Stock", "Stock"),
+            ("Add Coils to Stock", "Add Coils to Stock", "Add"),
+            ("Save Preset", "Save Preset", "Save"), ("Load Preset", "Load Preset", "Load")]
 
     job_phase_changed = Signal(str)
     job_number_changed = Signal(str)
@@ -2681,6 +2705,656 @@ class StatusLine(QFrame):
         self.left.setText(text)
 
 
+# ---------------------------------------------------------------- keyboard shortcuts help
+class KeyboardShortcutsHelp(QDialog):
+    """Non-blocking help dialog showing all keyboard shortcuts.
+    Follows skeleton design language: SectionTitle header, skeleton colors, clean layout."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Keyboard Shortcuts")
+        self.setModal(False)  # non-blocking
+        self.setStyleSheet("QDialog{background:%s;}" % WINDOW_BG)
+        self.setMinimumWidth(420)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(16, 14, 16, 14)
+        outer.setSpacing(10)
+
+        # Header
+        outer.addWidget(SectionTitle("Keyboard Shortcuts"))
+
+        # Shortcuts table
+        shortcuts = [
+            ("Insert / F2", "Open coil weights dialog"),
+            ("Enter", "Calculate / Find combinations"),
+            ("Esc", "Cancel running calculation"),
+            ("F1", "Show this help"),
+            ("F7", "Load CASE W demo (1.1M combinations)"),
+            ("F10", "Switch to Final Job Order (locks inputs)"),
+            ("Up / Down", "Navigate results table"),
+            ("Click column header", "Sort combinations table"),
+            ("Click row", "Select combination for details"),
+            ("Pin", "Pin combination to memory (star appears)"),
+            ("Compare...", "Compare up to 4 combinations side by side"),
+            ("Ctrl+V", "Paste Excel column into coil weights"),
+            ("Ctrl+Return", "Apply coil weights and close dialog"),
+        ]
+
+        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
+
+        table = QTableWidget(len(shortcuts), 2)
+        table.verticalHeader().setVisible(False)
+        table.horizontalHeader().setVisible(False)
+        table.setShowGrid(False)
+        table.setEditTriggers(QTableWidget.NoEditTriggers)
+        table.setSelectionMode(QTableWidget.NoSelection)
+        table.setFocusPolicy(Qt.NoFocus)
+        table.setStyleSheet("QTableWidget{background:transparent;border:none;}")
+
+        # Column 0: key (fixed width), Column 1: description (stretch)
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        table.horizontalHeader().resizeSection(0, 140)
+
+        for row, (key, desc) in enumerate(shortcuts):
+            # Key column
+            key_item = QTableWidgetItem(key)
+            key_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            key_item.setFont(make_font(9, QFont.Weight.DemiBold))
+            key_item.setForeground(QColor(INK))
+            key_item.setFlags(Qt.ItemIsEnabled)
+            table.setItem(row, 0, key_item)
+
+            # Description column
+            desc_item = QTableWidgetItem(desc)
+            desc_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            desc_item.setFont(make_font(9))
+            desc_item.setForeground(QColor(MUTED))
+            desc_item.setFlags(Qt.ItemIsEnabled)
+            table.setItem(row, 1, desc_item)
+
+        table.setFixedHeight(table.horizontalHeader().height() + sum(table.rowHeight(r) for r in range(len(shortcuts))) + 4)
+        outer.addWidget(table)
+
+        # Close button
+        btn_row = QHBoxLayout()
+        btn_row.addStretch(1)
+        close_btn = QPushButton("Close")
+        close_btn.setFixedSize(80, 32)
+        close_btn.setFont(make_font(9, QFont.Weight.Medium))
+        close_btn.setStyleSheet(PRIMARY_QSS)
+        close_btn.setAutoDefault(False)
+        close_btn.clicked.connect(self.accept)
+        btn_row.addWidget(close_btn)
+        outer.addLayout(btn_row)
+
+
+# ---------------------------------------------------------------- Job Orders List Dialog
+class JobOrdersDialog(QDialog):
+    """Dialog for browsing past job orders.
+    Follows skeleton design language: SectionTitle header, ResultsView-style table with SwatchDelegate."""
+
+    def __init__(self, jobs, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Job Orders")
+        self.setModal(True)
+        self.setStyleSheet("QDialog{background:%s;}" % WINDOW_BG)
+        self.setMinimumSize(800, 500)
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(16, 14, 16, 14)
+        outer.setSpacing(10)
+
+        # Header
+        outer.addWidget(SectionTitle("Job Orders"))
+
+        # Table
+        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView
+
+        self.table = QTableWidget(len(jobs), 6)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setHorizontalHeaderLabels(["Job Number", "Date", "Status", "Consignment", "Formula", "Total (kg)"])
+        self.table.setShowGrid(False)
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.table.setFocusPolicy(Qt.StrongFocus)
+        self.table.setStyleSheet("QTableWidget{background:#FFFFFF;border:1px solid %s;border-radius:4px;}" % LINE)
+        self.table.setAlternatingRowColors(True)
+
+        hh = self.table.horizontalHeader()
+        hh.setFixedHeight(34)
+        hh.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        hh.setFont(make_font(9, QFont.Weight.DemiBold))
+        hh.setStyleSheet("QHeaderView::section{background:%s;border:none;border-bottom:1px solid %s;padding:0 8px;color:%s;}" % (WINDOW_BG, LINE, INK))
+        hh.setSectionResizeMode(0, QHeaderView.Fixed)
+        hh.setSectionResizeMode(1, QHeaderView.Fixed)
+        hh.setSectionResizeMode(2, QHeaderView.Fixed)
+        hh.setSectionResizeMode(3, QHeaderView.Fixed)
+        hh.setSectionResizeMode(4, QHeaderView.Stretch)
+        hh.setSectionResizeMode(5, QHeaderView.Fixed)
+        hh.resizeSection(0, 120)
+        hh.resizeSection(1, 100)
+        hh.resizeSection(2, 80)
+        hh.resizeSection(3, 150)
+        hh.resizeSection(5, 90)
+
+        self.table.verticalHeader().setDefaultSectionSize(28)
+
+        # Status badge colors
+        STATUS_COLORS = {
+            "planned": (GREEN, "#E8F5E9"),
+            "done": (BLUE, "#E3F2FD"),
+            "cancelled": (BAD, "#FDECEC"),
+        }
+
+        for row, job in enumerate(jobs):
+            # Job Number
+            code_item = QTableWidgetItem(job["code"])
+            code_item.setFont(make_font(9, QFont.Weight.DemiBold))
+            code_item.setForeground(QColor(INK))
+            code_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.table.setItem(row, 0, code_item)
+
+            # Date
+            created = job.get("created_at", "")
+            if created:
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+                    created = dt.strftime("%Y-%m-%d %H:%M")
+                except Exception:
+                    pass
+            date_item = QTableWidgetItem(created)
+            date_item.setFont(make_font(9))
+            date_item.setForeground(QColor(MUTED))
+            date_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.table.setItem(row, 1, date_item)
+
+            # Status (with colored badge)
+            status = job.get("status", "planned")
+            status_text = status.capitalize()
+            status_item = QTableWidgetItem(status_text)
+            status_item.setFont(make_font(9))
+            status_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            if status in STATUS_COLORS:
+                fg, bg = STATUS_COLORS[status]
+                status_item.setForeground(QColor(fg))
+                status_item.setBackground(QColor(bg))
+            self.table.setItem(row, 2, status_item)
+
+            # Consignment
+            consignment = ""
+            if job.get("coils"):
+                # Get consignment name from first coil
+                coil_code = job["coils"][0].get("code", "")
+                if coil_code and "-" in coil_code:
+                    consignment = coil_code.rsplit("-", 1)[0]
+            cons_item = QTableWidgetItem(consignment)
+            cons_item.setFont(make_font(9))
+            cons_item.setForeground(QColor(MUTED))
+            cons_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.table.setItem(row, 3, cons_item)
+
+            # Formula
+            formula = job.get("formula", "")
+            formula_item = QTableWidgetItem(formula)
+            formula_item.setFont(make_font(9))
+            formula_item.setForeground(QColor(INK))
+            formula_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.table.setItem(row, 4, formula_item)
+
+            # Total kg
+            total_kg = 0.0
+            if job.get("plan"):
+                for s in job["plan"]:
+                    total_kg += s.get("kg", 0)
+            total_item = QTableWidgetItem("%.3f" % total_kg)
+            total_item.setFont(make_font(9, QFont.Weight.DemiBold))
+            total_item.setForeground(QColor(INK))
+            total_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            self.table.setItem(row, 5, total_item)
+
+        outer.addWidget(self.table, 1)
+
+        # Close button
+        btn_row = QHBoxLayout()
+        btn_row.addStretch(1)
+        close_btn = QPushButton("Close")
+        close_btn.setFixedSize(80, 32)
+        close_btn.setFont(make_font(9, QFont.Weight.Medium))
+        close_btn.setStyleSheet(PRIMARY_QSS)
+        close_btn.setAutoDefault(False)
+        close_btn.clicked.connect(self.accept)
+        btn_row.addWidget(close_btn)
+        outer.addLayout(btn_row)
+
+
+# ---------------------------------------------------------------- Coil Stock Dashboard
+class CoilStockDashboard(QDialog):
+    """Visual grid of all coils with remaining stock, color-coded by stock level.
+    Follows skeleton design language: Card-based grid with colored indicators."""
+
+    def __init__(self, stock_data, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Coil Stock Dashboard")
+        self.setModal(True)
+        self.setStyleSheet("QDialog{background:%s;}" % WINDOW_BG)
+        self.setMinimumSize(1000, 600)
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(16, 14, 16, 14)
+        outer.setSpacing(10)
+
+        # Header with summary
+        header = QHBoxLayout()
+        header.addWidget(SectionTitle("Coil Stock Dashboard"))
+        header.addStretch(1)
+
+        # Summary stats
+        total = len(stock_data)
+        full = sum(1 for s in stock_data if s["status"] == "full")
+        low = sum(1 for s in stock_data if s["status"] == "low")
+        empty = sum(1 for s in stock_data if s["status"] == "empty")
+        total_remaining = sum(s["remaining_kg"] for s in stock_data)
+
+        self.summary_labels = {}
+        for label, value, color in [
+            ("Total", total, INK),
+            ("Full", full, GREEN),
+            ("Low", low, BLUE),
+            ("Empty", empty, SCRAP_RED),
+            ("Total Remaining (kg)", f"{total_remaining:,.3f}", INK),
+        ]:
+            box = QVBoxLayout()
+            box.setSpacing(2)
+            val_lbl = mk_label(str(value), 14, color, QFont.Weight.DemiBold)
+            val_lbl.setAlignment(Qt.AlignCenter)
+            key_lbl = mk_label(label, 8, MUTED)
+            key_lbl.setAlignment(Qt.AlignCenter)
+            box.addWidget(val_lbl)
+            box.addWidget(key_lbl)
+            w = QWidget()
+            w.setLayout(box)
+            header.addWidget(w)
+
+        outer.addLayout(header)
+
+        # Scrollable grid of coil cards
+        from PySide6.QtWidgets import QScrollArea, QGridLayout
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setStyleSheet("QScrollArea{border:none;background:transparent;}")
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        content = QWidget()
+        content.setStyleSheet("background:transparent;")
+        grid = QGridLayout(content)
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(12)
+        grid.setVerticalSpacing(12)
+
+        STATUS_COLORS = {
+            "full": (GREEN, "#E8F5E9", "● Full"),
+            "low": (BLUE, "#E3F2FD", "● Low"),
+            "empty": (SCRAP_RED, "#FDECEC", "● Empty"),
+        }
+
+        row = 0
+        col = 0
+        MAX_COLS = 4
+
+        for coil in stock_data:
+            status = coil["status"]
+            fg, bg, status_text = STATUS_COLORS.get(status, (INK, "#FFFFFF", status))
+
+            card = QFrame()
+            card.setStyleSheet(f"""
+                QFrame {{
+                    background: #FFFFFF;
+                    border: 1px solid {LINE};
+                    border-radius: 6px;
+                    border-left: 4px solid {fg};
+                }}
+            """)
+            card_layout = QVBoxLayout(card)
+            card_layout.setContentsMargins(12, 10, 12, 10)
+            card_layout.setSpacing(6)
+
+            # Coil code (top)
+            code_lbl = mk_label(coil["code"], 10, INK, QFont.Weight.DemiBold)
+            code_lbl.setProperty("skip_text_check", True)
+            card_layout.addWidget(code_lbl)
+
+            # Consignment name
+            cons_lbl = mk_label(coil["consignment"], 9, MUTED)
+            card_layout.addWidget(cons_lbl)
+
+            # Specs row
+            specs = QHBoxLayout()
+            specs.setSpacing(16)
+
+            # Thickness
+            t_box = QVBoxLayout()
+            t_box.setSpacing(1)
+            t_val = mk_label(f"{coil['thickness_mm']:.3f} mm", 9, INK, QFont.Weight.DemiBold)
+            t_val.setAlignment(Qt.AlignCenter)
+            t_key = mk_label("Thickness", 7.5, MUTED)
+            t_key.setAlignment(Qt.AlignCenter)
+            t_box.addWidget(t_val)
+            t_box.addWidget(t_key)
+            specs.addLayout(t_box, 1)
+
+            # Width
+            w_box = QVBoxLayout()
+            w_box.setSpacing(1)
+            w_val = mk_label(f"{coil['width_mm']:.0f} mm", 9, INK, QFont.Weight.DemiBold)
+            w_val.setAlignment(Qt.AlignCenter)
+            w_key = mk_label("Width", 7.5, MUTED)
+            w_key.setAlignment(Qt.AlignCenter)
+            w_box.addWidget(w_val)
+            w_box.addWidget(w_key)
+            specs.addLayout(w_box, 1)
+
+            # Original weight
+            ow_box = QVBoxLayout()
+            ow_box.setSpacing(1)
+            ow_val = mk_label(f"{coil['weight_kg']:.3f} kg", 9, INK, QFont.Weight.DemiBold)
+            ow_val.setAlignment(Qt.AlignCenter)
+            ow_key = mk_label("Original", 7.5, MUTED)
+            ow_key.setAlignment(Qt.AlignCenter)
+            ow_box.addWidget(ow_val)
+            ow_box.addWidget(ow_key)
+            specs.addLayout(ow_box, 1)
+
+            card_layout.addLayout(specs)
+
+            # Remaining bar
+            ratio = coil["remaining_kg"] / coil["weight_kg"] if coil["weight_kg"] > 0 else 0
+            bar_bg = QFrame()
+            bar_bg.setFixedHeight(8)
+            bar_bg.setStyleSheet(f"background:#E8EAED;border-radius:4px;")
+            bar_layout = QHBoxLayout(bar_bg)
+            bar_layout.setContentsMargins(0, 0, 0, 0)
+
+            bar_fill = QFrame()
+            bar_fill.setFixedHeight(8)
+            bar_fill.setStyleSheet(f"background:{fg};border-radius:4px;")
+            if ratio > 0:
+                bar_fill.setFixedWidth(int(100 * max(0.02, ratio)))
+            bar_layout.addWidget(bar_fill)
+            bar_layout.addStretch(1)
+            card_layout.addWidget(bar_bg)
+
+            # Remaining weight + status
+            bottom = QHBoxLayout()
+            rem_lbl = mk_label(f"Remaining: {coil['remaining_kg']:.3f} kg", 9, INK, QFont.Weight.DemiBold)
+            rem_lbl.setProperty("skip_text_check", True)
+            bottom.addWidget(rem_lbl)
+            bottom.addStretch(1)
+            status_lbl = mk_label(status_text, 8.5, fg, QFont.Weight.DemiBold)
+            bottom.addWidget(status_lbl)
+            card_layout.addLayout(bottom)
+
+            grid.addWidget(card, row, col)
+            col += 1
+            if col >= MAX_COLS:
+                col = 0
+                row += 1
+
+        scroll.setWidget(content)
+        outer.addWidget(scroll, 1)
+
+        # Close button
+        btn_row = QHBoxLayout()
+        btn_row.addStretch(1)
+        close_btn = QPushButton("Close")
+        close_btn.setFixedSize(80, 32)
+        close_btn.setFont(make_font(9, QFont.Weight.Medium))
+        close_btn.setStyleSheet(PRIMARY_QSS)
+        close_btn.setAutoDefault(False)
+        close_btn.clicked.connect(self.accept)
+        btn_row.addWidget(close_btn)
+        outer.addLayout(btn_row)
+
+
+# ---------------------------------------------------------------- Add Coils to Stock Dialog
+class AddCoilsToStockDialog(QDialog):
+    """Dialog for receiving new coils into stock.
+    Follows skeleton design language: SectionTitle header, Card-style input panels, skeleton colors."""
+
+    def __init__(self, db, parent=None):
+        super().__init__(parent)
+        self.db = db
+        self.setWindowTitle("Add Coils to Stock")
+        self.setModal(True)
+        self.setStyleSheet("QDialog{background:%s;}" % WINDOW_BG)
+        self.setMinimumWidth(520)
+        self.setMinimumHeight(560)
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(16, 14, 16, 14)
+        outer.setSpacing(12)
+
+        # Header
+        outer.addWidget(SectionTitle("Receive Coils into Stock"))
+
+        # --- Consignment info card ---
+        info_card = QFrame()
+        info_card.setObjectName("Card")
+        info_card.setStyleSheet(PANEL_QSS)
+        info_lay = QFormLayout(info_card)
+        info_lay.setVerticalSpacing(10)
+        info_lay.setHorizontalSpacing(10)
+        info_lay.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+
+        self.consignment_edit = style_edit(QLineEdit())
+        self.consignment_edit.setPlaceholderText("e.g. HR-261116")
+        info_lay.addRow(mk_label("Consignment:"), self.consignment_edit)
+
+        self.supplier_edit = style_edit(QLineEdit())
+        self.supplier_edit.setPlaceholderText("Supplier name (optional)")
+        info_lay.addRow(mk_label("Supplier:"), self.supplier_edit)
+
+        self.material_combo = MaterialCombo(MATERIAL_TYPES)
+        info_lay.addRow(mk_label("Material Type:"), self.material_combo)
+
+        self.received_edit = QDateEdit()
+        self.received_edit.setCalendarPopup(True)
+        self.received_edit.setDate(QDate.currentDate())
+        self.received_edit.setDisplayFormat("yyyy-MM-dd")
+        self.received_edit.setFont(make_font(9))
+        info_lay.addRow(mk_label("Received On:"), self.received_edit)
+
+        outer.addWidget(info_card)
+
+        # --- Coils table card ---
+        coils_card = QFrame()
+        coils_card.setObjectName("Card")
+        coils_card.setStyleSheet(PANEL_QSS)
+        coils_lay = QVBoxLayout(coils_card)
+        coils_lay.setContentsMargins(12, 10, 12, 10)
+        coils_lay.setSpacing(8)
+
+        coil_header = QHBoxLayout()
+        coil_header.addWidget(mk_label("Coils", 10, INK, QFont.Weight.DemiBold))
+        coil_header.addStretch(1)
+        add_row_btn = QPushButton("+ Add Coil")
+        add_row_btn.setFixedSize(100, 28)
+        add_row_btn.setFont(make_font(9, QFont.Weight.Medium))
+        add_row_btn.setStyleSheet(OUTLINE_QSS)
+        coil_header.addWidget(add_row_btn)
+        remove_row_btn = QPushButton("− Remove Last")
+        remove_row_btn.setFixedSize(110, 28)
+        remove_row_btn.setFont(make_font(9, QFont.Weight.Medium))
+        remove_row_btn.setStyleSheet(OUTLINE_QSS)
+        coil_header.addWidget(remove_row_btn)
+        coils_lay.addLayout(coil_header)
+
+        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView
+        from PySide6.QtCore import Qt
+
+        self.coils_table = QTableWidget(0, 6)
+        self.coils_table.verticalHeader().setVisible(False)
+        self.coils_table.setHorizontalHeaderLabels(["Coil Name", "Thickness (mm)", "Width (mm)", "Weight (kg)", "Notes", ""])
+        self.coils_table.setShowGrid(False)
+        self.coils_table.setEditTriggers(QAbstractItemView.AllEditTriggers)
+        self.coils_table.setSelectionMode(QAbstractItemView.NoSelection)
+        self.coils_table.setFocusPolicy(Qt.StrongFocus)
+        self.coils_table.setStyleSheet("QTableWidget{background:#FFFFFF;border:1px solid %s;border-radius:4px;}" % LINE)
+        self.coils_table.setAlternatingRowColors(True)
+        hh = self.coils_table.horizontalHeader()
+        hh.setFixedHeight(30)
+        hh.setFont(make_font(9, QFont.Weight.DemiBold))
+        hh.setStyleSheet("QHeaderView::section{background:%s;border:none;border-bottom:1px solid %s;padding:0 8px;color:%s;}" % (WINDOW_BG, LINE, INK))
+        hh.setSectionResizeMode(0, QHeaderView.Fixed)
+        hh.setSectionResizeMode(1, QHeaderView.Stretch)
+        hh.setSectionResizeMode(2, QHeaderView.Stretch)
+        hh.setSectionResizeMode(3, QHeaderView.Stretch)
+        hh.setSectionResizeMode(4, QHeaderView.Stretch)
+        hh.setSectionResizeMode(5, QHeaderView.Fixed)
+        hh.resizeSection(0, 120)
+        hh.resizeSection(5, 40)
+        self.coils_table.verticalHeader().setDefaultSectionSize(28)
+
+        # Double validator for numeric fields
+        double_validator = QDoubleValidator(0.001, 999999.999, 3)
+        double_validator.setNotation(QDoubleValidator.StandardNotation)
+
+        def make_double_edit():
+            ed = QLineEdit()
+            ed.setValidator(double_validator)
+            return ed
+
+        def add_coil_row(thick="", width="", weight="", notes=""):
+            r = self.coils_table.rowCount()
+            self.coils_table.insertRow(r)
+            # Coil name: auto-generated {MATERIAL}-{SEQ}
+            material = self.material_combo.currentText().strip() or "HR"
+            coil_name = "%s-%d" % (material, r + 1)
+            name_item = QTableWidgetItem(coil_name)
+            name_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
+            name_item.setFlags(Qt.ItemIsEnabled)  # read-only
+            name_item.setForeground(QColor(MUTED))
+            self.coils_table.setItem(r, 0, name_item)
+            for c, val in enumerate([thick, width, weight, notes]):
+                item = QTableWidgetItem(val)
+                item.setTextAlignment(Qt.AlignCenter if c < 2 else Qt.AlignLeft | Qt.AlignVCenter)
+                self.coils_table.setItem(r, c + 1, item)
+            # remove button on last column
+            del_btn = QPushButton("🗑")
+            del_btn.setFixedSize(24, 24)
+            del_btn.setFont(make_font(9))
+            del_btn.clicked.connect(lambda checked, row=r: self.coils_table.removeRow(row))
+            self.coils_table.setCellWidget(r, 5, del_btn)
+
+        add_row_btn.clicked.connect(lambda: add_coil_row())
+        remove_row_btn.clicked.connect(self._remove_last_coil_row)
+        # Re-number coil names when material changes
+        self.material_combo.changed.connect(self._renumber_coil_names)
+
+        coils_lay.addWidget(self.coils_table)
+
+        # Total weight label
+        self.total_weight_lbl = mk_label("Total weight: 0.000 kg", 9, MUTED)
+        coils_lay.addWidget(self.total_weight_lbl)
+
+        outer.addWidget(coils_card, 1)
+
+        # Buttons
+        btn_row = QHBoxLayout()
+        btn_row.addStretch(1)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setFixedSize(80, 32)
+        cancel_btn.setFont(make_font(9, QFont.Weight.Medium))
+        cancel_btn.setStyleSheet(OUTLINE_QSS)
+        cancel_btn.setAutoDefault(False)
+        cancel_btn.clicked.connect(self.reject)
+        btn_row.addWidget(cancel_btn)
+
+        save_btn = QPushButton("Add to Stock")
+        save_btn.setFixedSize(120, 32)
+        save_btn.setFont(make_font(9, QFont.Weight.DemiBold))
+        save_btn.setStyleSheet(PRIMARY_QSS)
+        save_btn.setAutoDefault(False)
+        save_btn.clicked.connect(self._save)
+        btn_row.addWidget(save_btn)
+        outer.addLayout(btn_row)
+
+    def _remove_last_coil_row(self):
+        n = self.coils_table.rowCount()
+        if n > 0:
+            self.coils_table.removeRow(n - 1)
+            self._renumber_coil_names()
+
+    def _renumber_coil_names(self):
+        """Re-generate coil names as {MATERIAL}-{SEQ} for all rows."""
+        material = self.material_combo.currentText().strip() or "HR"
+        for r in range(self.coils_table.rowCount()):
+            item = self.coils_table.item(r, 0)
+            if item is not None:
+                item.setText("%s-%d" % (material, r + 1))
+
+    def _validate(self):
+        consignment = self.consignment_edit.text().strip()
+        if not consignment:
+            raise ValueError("Consignment name is required")
+        coils = []
+        for r in range(self.coils_table.rowCount()):
+            thick_item = self.coils_table.item(r, 1)
+            width_item = self.coils_table.item(r, 2)
+            weight_item = self.coils_table.item(r, 3)
+            notes_item = self.coils_table.item(r, 4)
+            thick = (thick_item.text() if thick_item else "").strip()
+            width = (width_item.text() if width_item else "").strip()
+            weight = (weight_item.text() if weight_item else "").strip()
+            notes = (notes_item.text() if notes_item else "").strip()
+            if not thick and not width and not weight:
+                continue
+            if not thick or not width or not weight:
+                raise ValueError("Coil %d: thickness, width and weight are all required" % (r + 1))
+            try:
+                thick_f = float(thick)
+                width_f = float(width)
+                weight_f = float(weight)
+            except ValueError:
+                raise ValueError("Coil %d: thickness, width and weight must be numbers" % (r + 1))
+            if thick_f <= 0 or width_f <= 0 or weight_f <= 0:
+                raise ValueError("Coil %d: all values must be above 0" % (r + 1))
+            coils.append({
+                "thickness_mm": thick_f,
+                "width_mm": width_f,
+                "weight_kg": weight_f,
+                "notes": notes,
+            })
+        if not coils:
+            raise ValueError("Add at least one coil")
+        return consignment, coils
+
+    def _save(self):
+        try:
+            consignment, coils = self._validate()
+        except ValueError as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Invalid Input", str(e))
+            return
+
+        supplier = self.supplier_edit.text().strip() or ""
+        material = self.material_combo.currentText().strip() or "HR"
+        received_on = self.received_edit.date().toString("yyyy-MM-dd")
+
+        try:
+            self.db.add_consignment(consignment, coils, supplier=supplier, material=material, received_on=received_on)
+        except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Database Error", str(e))
+            return
+
+        self.accept()
+
+
 # ---------------------------------------------------------------- main window
 from PySide6.QtCore import Signal
 
@@ -2692,7 +3366,9 @@ class MainWindow(QMainWindow):
     export_job_order_requested = Signal()
     save_preset_requested = Signal()
     load_preset_requested = Signal()
-    view_log_requested = Signal()
+    show_job_orders_requested = Signal()
+    show_coil_stock_requested = Signal()
+    add_coils_to_stock_requested = Signal()
     params_changed = Signal(dict)  # emits all input parameters
     job_phase_changed = Signal(str)
     job_number_changed = Signal(str)
@@ -2735,7 +3411,9 @@ class MainWindow(QMainWindow):
         b["Export Job Order"].clicked.connect(self.export_job_order_requested.emit)
         b["Save Preset"].clicked.connect(self.save_preset_requested.emit)
         b["Load Preset"].clicked.connect(self.load_preset_requested.emit)
-        b["View Log"].clicked.connect(self.view_log_requested.emit)
+        b["View Job Orders"].clicked.connect(self.show_job_orders_requested.emit)
+        b["View Coil Stock"].clicked.connect(self.show_coil_stock_requested.emit)
+        b["Add Coils to Stock"].clicked.connect(self.add_coils_to_stock_requested.emit)
 
         # Connect TopBar signals to MainWindow signals
         self.topbar.job_phase_changed.connect(self.job_phase_changed.emit)
@@ -2757,8 +3435,19 @@ class MainWindow(QMainWindow):
         self.left.thickness_changed.connect(self._emit_params)
         self.left.theoretical_length_changed.connect(self._emit_params)
 
+        # Keyboard shortcuts help dialog (F1)
+        self._shortcuts_help = KeyboardShortcutsHelp(self)
+        self._help_shortcut = QShortcut(QKeySequence("F1"), self)
+        self._help_shortcut.activated.connect(self._show_shortcuts_help)
+
         # Start in empty state
         self.show_empty()
+
+    def _show_shortcuts_help(self):
+        """Show the keyboard shortcuts help overlay (non-blocking)."""
+        self._shortcuts_help.show()
+        self._shortcuts_help.raise_()
+        self._shortcuts_help.activateWindow()
 
     def _emit_params(self):
         self.params_changed.emit(self.left.get_all_params())
@@ -2779,6 +3468,25 @@ class MainWindow(QMainWindow):
     def set_status(self, text):
         self.statusline.say(text)
 
+    def show_job_orders(self, jobs):
+        """Show the job orders list dialog."""
+        dlg = JobOrdersDialog(jobs, self)
+        dlg.exec()
+
+    def show_coil_stock(self, stock_data):
+        """Show the coil stock dashboard."""
+        dlg = CoilStockDashboard(stock_data, self)
+        dlg.exec()
+
+    def show_add_coils_to_stock(self):
+        """Show the add coils to stock dialog."""
+        ctrl = getattr(self, '_controller', None)
+        db = ctrl.db if ctrl is not None else None
+        from slitra_window import AddCoilsToStockDialog
+        dlg = AddCoilsToStockDialog(db, self)
+        if dlg.exec():
+            self.set_status("Coils added to stock")
+
     def resizeEvent(self, e):
         super().resizeEvent(e)
         w = self.width()
@@ -2786,12 +3494,16 @@ class MainWindow(QMainWindow):
         self.topbar.set_compact(w < 1100)
 
     def closeEvent(self, e):
-        """Clean up calculation thread on window close."""
+        """Clean up calculation thread and update timer on window close."""
         ctrl = getattr(self, '_controller', None)
-        if ctrl is not None and ctrl.calc_thread is not None:
-            ctrl.on_cancel()
-            ctrl.calc_thread.quit()
-            ctrl.calc_thread.wait(3000)
+        if ctrl is not None:
+            if ctrl.calc_thread is not None:
+                ctrl.on_cancel()
+                ctrl.calc_thread.quit()
+                ctrl.calc_thread.wait(3000)
+            if hasattr(ctrl, '_update_timer') and ctrl._update_timer is not None:
+                ctrl._update_timer.stop()
+                ctrl._update_timer = None
         super().closeEvent(e)
 
 
@@ -2946,7 +3658,6 @@ def apply_light_palette(app):
     # Force light color scheme if API available
     if hasattr(app.styleHints(), "setColorScheme"):
         try:
-            from PySide6.QtCore import Qt
             app.styleHints().setColorScheme(Qt.ColorScheme.Light)
         except Exception:
             pass

@@ -365,40 +365,74 @@ class SlitraDB:
     def remaining(self, coil_id):
         return _r3(self.db.execute("SELECT COALESCE(SUM(kg),0) FROM ledger WHERE coil_id=?", (coil_id,)).fetchone()[0])
 
+    def stock_status(self):
+        """Return all coils with remaining stock, grouped by consignment.
+        Each entry: code, consignment, thickness_mm, width_mm, weight_kg, remaining_kg, status.
+        status is 'full', 'low', or 'empty' based on remaining weight ratio."""
+        rows = self.db.execute(
+            "SELECT c.id, c.code, g.name as consignment, c.thickness_mm, c.width_mm, c.weight_kg"
+            " FROM coils c JOIN consignments g ON g.id=c.consignment_id"
+            " ORDER BY g.name, c.seq"
+        ).fetchall()
+        out = []
+        for r in rows:
+            remaining = _r3(r["weight_kg"] + self.remaining(r["id"]))
+            ratio = remaining / r["weight_kg"] if r["weight_kg"] > 0 else 0
+            if remaining <= 0.001:
+                status = "empty"
+            elif ratio <= 0.10:
+                status = "low"
+            else:
+                status = "full"
+            out.append({
+                "id": r["id"],
+                "code": r["code"],
+                "consignment": r["consignment"],
+                "thickness_mm": r["thickness_mm"],
+                "width_mm": r["width_mm"],
+                "weight_kg": r["weight_kg"],
+                "remaining_kg": remaining,
+                "status": status,
+            })
+        return out
+
     def archive_consignment(self, consignment_id, archived=True):
         self.db.execute("UPDATE consignments SET archived=? WHERE id=?", (1 if archived else 0, consignment_id))
         self.log("inventory", "consignment %d %s" % (consignment_id, "archived" if archived else "restored"))
 
     def next_consignment_code(self, material):
         """Return next available consignment name for material.
-        Base = material (HR, CR, GI, GL, PPCR, CRBA).
-        If unused → return base.
-        Else find highest numeric suffix (HR2 → 2) → return material{suffix+1} (HR3).
+        Format: {MATERIAL}-{YY}{MM}{DD}-{SEQ}
+        Example: HR-261116-001, CR-261116-002
+        This gives: material type, date, and sequence — sortable, unique, informative.
         """
         base = (material or "").strip().upper()
         if not base:
             return "UNKNOWN"
-        # Query existing consignments starting with base
+        today = datetime.now().strftime("%y%m%d")  # YYMMDD
+        prefix = f"{base}-{today}"
+        # Query existing consignments starting with this prefix
         rows = self.db.execute(
-            "SELECT name FROM consignments WHERE name = ? OR name LIKE ?",
-            (base, base + "%")
+            "SELECT name FROM consignments WHERE name LIKE ? ORDER BY id DESC LIMIT 1",
+            (prefix + "-%",)
         ).fetchall()
-        # Parse suffixes
-        max_suffix = 0
-        for r in rows:
-            name = r["name"]
-            if name == base:
-                max_suffix = max(max_suffix, 1)
-            elif name.startswith(base):
-                suffix_str = name[len(base):]
-                if suffix_str.isdigit():
-                    max_suffix = max(max_suffix, int(suffix_str))
-        if max_suffix == 0:
-            return base
-        elif max_suffix == 1:
-            return f"{base}2"
-        else:
-            return f"{base}{max_suffix + 1}"
+        if not rows:
+            return f"{prefix}-001"
+        # Parse sequence from last name
+        last_name = rows[0]["name"]
+        try:
+            last_seq = int(last_name.split("-")[-1])
+        except (ValueError, IndexError):
+            last_seq = 0
+        return f"{prefix}-{last_seq + 1:03d}"
+
+    def recent_consignments(self, limit=10):
+        """Return list of recent consignment names (most recent first)."""
+        rows = self.db.execute(
+            "SELECT name FROM consignments ORDER BY id DESC LIMIT ?",
+            (limit,)
+        ).fetchall()
+        return [r["name"] for r in rows]
 
     # ------------------------------------------------------------------ stock movements
     def credit(self, coil_id, kg, note="", kind="adjust", job_id=None):
