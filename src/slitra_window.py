@@ -28,7 +28,7 @@ from PySide6.QtGui import (QBrush, QColor, QDoubleValidator, QFont, QFontDatabas
 from PySide6.QtWidgets import (QAbstractItemDelegate, QAbstractItemView, QApplication, QCheckBox,
                                QComboBox, QCompleter, QDateEdit, QDialog, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QHBoxLayout,
                                QHeaderView, QLabel, QLineEdit, QMainWindow,
-                               QPushButton, QSizePolicy, QSpinBox, QStyledItemDelegate,
+                               QPushButton, QSizePolicy, QSpinBox, QStyledItemDelegate, QTabWidget,
                                QTableWidget, QTableWidgetItem, QVBoxLayout,
                                QWidget, QScrollArea, QTableView, QMenu)
 from array import array
@@ -2612,8 +2612,7 @@ class TopBar(QFrame):
     # name, full text, compact text
     SPEC = [("Calculate", "Calculate", "Calculate"), ("Cancel", "Cancel", "✕"), ("Clear", "Clear", "⌫"),
             ("Export Job Order", "Export Job Order", "Export"),
-            ("View Job Orders", "View Job Orders", "Jobs"), ("View Coil Stock", "View Coil Stock", "Stock"),
-            ("Add Coils to Stock", "Add Coils to Stock", "Add"),
+            ("View Job Orders", "View Job Orders", "Jobs"), ("Inventory", "Inventory", "Inv"),
             ("Save Preset", "Save Preset", "Save"), ("Load Preset", "Load Preset", "Load")]
 
     job_phase_changed = Signal(str)
@@ -2932,180 +2931,52 @@ class JobOrdersDialog(QDialog):
 
 
 # ---------------------------------------------------------------- Coil Stock Dashboard
-class CoilStockDashboard(QDialog):
-    """Visual grid of all coils with remaining stock, color-coded by stock level.
-    Follows skeleton design language: Card-based grid with colored indicators."""
+# ---------------------------------------------------------------- Inventory Window
+class InventoryWindow(QDialog):
+    """Single window for coil inventory: Receive (input), Stock (calculate/display),
+    and Withdraw/Debit (record stock going out). Follows skeleton design language:
+    SectionTitle header, Card-style panels, skeleton colors, QTabWidget tabs."""
 
-    def __init__(self, stock_data, parent=None):
+    def __init__(self, db, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Coil Stock Dashboard")
+        self.db = db
+        self.setWindowTitle("Inventory — Coil Stock")
         self.setModal(True)
         self.setStyleSheet("QDialog{background:%s;}" % WINDOW_BG)
-        self.setMinimumSize(1000, 600)
+        self.setMinimumSize(1100, 700)
+        self.resize(1200, 800)
 
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(16, 14, 16, 14)
-        outer.setSpacing(10)
+        outer.setContentsMargins(12, 10, 12, 10)
+        outer.setSpacing(8)
 
-        # Header with summary
-        header = QHBoxLayout()
-        header.addWidget(SectionTitle("Coil Stock Dashboard"))
-        header.addStretch(1)
+        outer.addWidget(SectionTitle("Inventory — Receive • Stock • Withdraw"))
 
-        # Summary stats
-        total = len(stock_data)
-        full = sum(1 for s in stock_data if s["status"] == "full")
-        low = sum(1 for s in stock_data if s["status"] == "low")
-        empty = sum(1 for s in stock_data if s["status"] == "empty")
-        total_remaining = sum(s["remaining_kg"] for s in stock_data)
+        # Tab bar styled with skeleton colors; active tab gets RED left accent
+        self.tabs = QTabWidget()
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane { border: 1px solid %s; background: #FFFFFF; border-radius: 6px; }
+            QTabBar::tab { background: #F2F4F7; color: %s; padding: 6px 14px; border: 1px solid %s;
+                           border-top-left-radius: 4px; border-top-right-radius: 4px; margin-right: 2px; }
+            QTabBar::tab:selected { background: #FFFFFF; color: %s; border-bottom: 1px solid #FFFFFF; }
+        """ % (LINE, MUTED, LINE, RED))
 
-        self.summary_labels = {}
-        for label, value, color in [
-            ("Total", total, INK),
-            ("Full", full, GREEN),
-            ("Low", low, BLUE),
-            ("Empty", empty, SCRAP_RED),
-            ("Total Remaining (kg)", f"{total_remaining:,.3f}", INK),
-        ]:
-            box = QVBoxLayout()
-            box.setSpacing(2)
-            val_lbl = mk_label(str(value), 14, color, QFont.Weight.DemiBold)
-            val_lbl.setAlignment(Qt.AlignCenter)
-            key_lbl = mk_label(label, 8, MUTED)
-            key_lbl.setAlignment(Qt.AlignCenter)
-            box.addWidget(val_lbl)
-            box.addWidget(key_lbl)
-            w = QWidget()
-            w.setLayout(box)
-            header.addWidget(w)
+        # Tab 1: Receive (input) — add coils to stock
+        self.tab_receive = QWidget()
+        self._build_receive_tab()
+        self.tabs.addTab(self.tab_receive, "  Receive (Input)  ")
 
-        outer.addLayout(header)
+        # Tab 2: Stock (calculate/display) — coil dashboard
+        self.tab_stock = QWidget()
+        self._build_stock_tab()
+        self.tabs.addTab(self.tab_stock, "  Stock (Calculate)  ")
 
-        # Scrollable grid of coil cards
-        from PySide6.QtWidgets import QScrollArea, QGridLayout
+        # Tab 3: Withdraw/Debit — record stock going out
+        self.tab_withdraw = QWidget()
+        self._build_withdraw_tab()
+        self.tabs.addTab(self.tab_withdraw, "  Withdraw / Debit  ")
 
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea{border:none;background:transparent;}")
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-        content = QWidget()
-        content.setStyleSheet("background:transparent;")
-        grid = QGridLayout(content)
-        grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(12)
-        grid.setVerticalSpacing(12)
-
-        STATUS_COLORS = {
-            "full": (GREEN, "#E8F5E9", "● Full"),
-            "low": (BLUE, "#E3F2FD", "● Low"),
-            "empty": (SCRAP_RED, "#FDECEC", "● Empty"),
-        }
-
-        row = 0
-        col = 0
-        MAX_COLS = 4
-
-        for coil in stock_data:
-            status = coil["status"]
-            fg, bg, status_text = STATUS_COLORS.get(status, (INK, "#FFFFFF", status))
-
-            card = QFrame()
-            card.setStyleSheet(f"""
-                QFrame {{
-                    background: #FFFFFF;
-                    border: 1px solid {LINE};
-                    border-radius: 6px;
-                    border-left: 4px solid {fg};
-                }}
-            """)
-            card_layout = QVBoxLayout(card)
-            card_layout.setContentsMargins(12, 10, 12, 10)
-            card_layout.setSpacing(6)
-
-            # Coil code (top)
-            code_lbl = mk_label(coil["code"], 10, INK, QFont.Weight.DemiBold)
-            code_lbl.setProperty("skip_text_check", True)
-            card_layout.addWidget(code_lbl)
-
-            # Consignment name
-            cons_lbl = mk_label(coil["consignment"], 9, MUTED)
-            card_layout.addWidget(cons_lbl)
-
-            # Specs row
-            specs = QHBoxLayout()
-            specs.setSpacing(16)
-
-            # Thickness
-            t_box = QVBoxLayout()
-            t_box.setSpacing(1)
-            t_val = mk_label(f"{coil['thickness_mm']:.3f} mm", 9, INK, QFont.Weight.DemiBold)
-            t_val.setAlignment(Qt.AlignCenter)
-            t_key = mk_label("Thickness", 7.5, MUTED)
-            t_key.setAlignment(Qt.AlignCenter)
-            t_box.addWidget(t_val)
-            t_box.addWidget(t_key)
-            specs.addLayout(t_box, 1)
-
-            # Width
-            w_box = QVBoxLayout()
-            w_box.setSpacing(1)
-            w_val = mk_label(f"{coil['width_mm']:.0f} mm", 9, INK, QFont.Weight.DemiBold)
-            w_val.setAlignment(Qt.AlignCenter)
-            w_key = mk_label("Width", 7.5, MUTED)
-            w_key.setAlignment(Qt.AlignCenter)
-            w_box.addWidget(w_val)
-            w_box.addWidget(w_key)
-            specs.addLayout(w_box, 1)
-
-            # Original weight
-            ow_box = QVBoxLayout()
-            ow_box.setSpacing(1)
-            ow_val = mk_label(f"{coil['weight_kg']:.3f} kg", 9, INK, QFont.Weight.DemiBold)
-            ow_val.setAlignment(Qt.AlignCenter)
-            ow_key = mk_label("Original", 7.5, MUTED)
-            ow_key.setAlignment(Qt.AlignCenter)
-            ow_box.addWidget(ow_val)
-            ow_box.addWidget(ow_key)
-            specs.addLayout(ow_box, 1)
-
-            card_layout.addLayout(specs)
-
-            # Remaining bar
-            ratio = coil["remaining_kg"] / coil["weight_kg"] if coil["weight_kg"] > 0 else 0
-            bar_bg = QFrame()
-            bar_bg.setFixedHeight(8)
-            bar_bg.setStyleSheet(f"background:#E8EAED;border-radius:4px;")
-            bar_layout = QHBoxLayout(bar_bg)
-            bar_layout.setContentsMargins(0, 0, 0, 0)
-
-            bar_fill = QFrame()
-            bar_fill.setFixedHeight(8)
-            bar_fill.setStyleSheet(f"background:{fg};border-radius:4px;")
-            if ratio > 0:
-                bar_fill.setFixedWidth(int(100 * max(0.02, ratio)))
-            bar_layout.addWidget(bar_fill)
-            bar_layout.addStretch(1)
-            card_layout.addWidget(bar_bg)
-
-            # Remaining weight + status
-            bottom = QHBoxLayout()
-            rem_lbl = mk_label(f"Remaining: {coil['remaining_kg']:.3f} kg", 9, INK, QFont.Weight.DemiBold)
-            rem_lbl.setProperty("skip_text_check", True)
-            bottom.addWidget(rem_lbl)
-            bottom.addStretch(1)
-            status_lbl = mk_label(status_text, 8.5, fg, QFont.Weight.DemiBold)
-            bottom.addWidget(status_lbl)
-            card_layout.addLayout(bottom)
-
-            grid.addWidget(card, row, col)
-            col += 1
-            if col >= MAX_COLS:
-                col = 0
-                row += 1
-
-        scroll.setWidget(content)
-        outer.addWidget(scroll, 1)
+        outer.addWidget(self.tabs, 1)
 
         # Close button
         btn_row = QHBoxLayout()
@@ -3119,27 +2990,16 @@ class CoilStockDashboard(QDialog):
         btn_row.addWidget(close_btn)
         outer.addLayout(btn_row)
 
+        # Initial load of stock data
+        self._refresh_stock()
 
-# ---------------------------------------------------------------- Add Coils to Stock Dialog
-class AddCoilsToStockDialog(QDialog):
-    """Dialog for receiving new coils into stock.
-    Follows skeleton design language: SectionTitle header, Card-style input panels, skeleton colors."""
+    # ========================================================= Tab 1: Receive (Input)
+    def _build_receive_tab(self):
+        lay = QVBoxLayout(self.tab_receive)
+        lay.setContentsMargins(16, 14, 16, 14)
+        lay.setSpacing(12)
 
-    def __init__(self, db, parent=None):
-        super().__init__(parent)
-        self.db = db
-        self.setWindowTitle("Add Coils to Stock")
-        self.setModal(True)
-        self.setStyleSheet("QDialog{background:%s;}" % WINDOW_BG)
-        self.setMinimumWidth(520)
-        self.setMinimumHeight(560)
-
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(16, 14, 16, 14)
-        outer.setSpacing(12)
-
-        # Header
-        outer.addWidget(SectionTitle("Receive Coils into Stock"))
+        lay.addWidget(SectionTitle("Receive Coils into Stock"))
 
         # --- Consignment info card ---
         info_card = QFrame()
@@ -3168,7 +3028,7 @@ class AddCoilsToStockDialog(QDialog):
         self.received_edit.setFont(make_font(9))
         info_lay.addRow(mk_label("Received On:"), self.received_edit)
 
-        outer.addWidget(info_card)
+        lay.addWidget(info_card)
 
         # --- Coils table card ---
         coils_card = QFrame()
@@ -3193,9 +3053,6 @@ class AddCoilsToStockDialog(QDialog):
         coil_header.addWidget(remove_row_btn)
         coils_lay.addLayout(coil_header)
 
-        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QAbstractItemView, QHeaderView
-        from PySide6.QtCore import Qt
-
         self.coils_table = QTableWidget(0, 6)
         self.coils_table.verticalHeader().setVisible(False)
         self.coils_table.setHorizontalHeaderLabels(["Coil Name", "Thickness (mm)", "Width (mm)", "Weight (kg)", "Notes", ""])
@@ -3203,7 +3060,7 @@ class AddCoilsToStockDialog(QDialog):
         self.coils_table.setEditTriggers(QAbstractItemView.AllEditTriggers)
         self.coils_table.setSelectionMode(QAbstractItemView.NoSelection)
         self.coils_table.setFocusPolicy(Qt.StrongFocus)
-        self.coils_table.setStyleSheet("QTableWidget{background:#FFFFFF;border:1px solid %s;border-radius:4px;}" % LINE)
+        self.coils_table.setStyleSheet("QTableWidget{background:#FFFFFF;border:1px solid %s;}" % LINE)
         self.coils_table.setAlternatingRowColors(True)
         hh = self.coils_table.horizontalHeader()
         hh.setFixedHeight(30)
@@ -3231,8 +3088,8 @@ class AddCoilsToStockDialog(QDialog):
         def add_coil_row(thick="", width="", weight="", notes=""):
             r = self.coils_table.rowCount()
             self.coils_table.insertRow(r)
-            # Coil name: auto-generated {MATERIAL}-{SEQ}
-            material = self.material_combo.currentText().strip() or "HR"
+            # Coil name: auto-generated {MATERIAL}-{SEQ}; fall back to HR when no material chosen yet
+            material = self.material_combo.value() or "HR"
             coil_name = "%s-%d" % (material, r + 1)
             name_item = QTableWidgetItem(coil_name)
             name_item.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
@@ -3261,7 +3118,7 @@ class AddCoilsToStockDialog(QDialog):
         self.total_weight_lbl = mk_label("Total weight: 0.000 kg", 9, MUTED)
         coils_lay.addWidget(self.total_weight_lbl)
 
-        outer.addWidget(coils_card, 1)
+        lay.addWidget(coils_card, 1)
 
         # Buttons
         btn_row = QHBoxLayout()
@@ -3279,9 +3136,9 @@ class AddCoilsToStockDialog(QDialog):
         save_btn.setFont(make_font(9, QFont.Weight.DemiBold))
         save_btn.setStyleSheet(PRIMARY_QSS)
         save_btn.setAutoDefault(False)
-        save_btn.clicked.connect(self._save)
+        save_btn.clicked.connect(self._save_receive)
         btn_row.addWidget(save_btn)
-        outer.addLayout(btn_row)
+        lay.addLayout(btn_row)
 
     def _remove_last_coil_row(self):
         n = self.coils_table.rowCount()
@@ -3291,13 +3148,13 @@ class AddCoilsToStockDialog(QDialog):
 
     def _renumber_coil_names(self):
         """Re-generate coil names as {MATERIAL}-{SEQ} for all rows."""
-        material = self.material_combo.currentText().strip() or "HR"
+        material = self.material_combo.value() or "HR"
         for r in range(self.coils_table.rowCount()):
             item = self.coils_table.item(r, 0)
             if item is not None:
                 item.setText("%s-%d" % (material, r + 1))
 
-    def _validate(self):
+    def _validate_receive(self):
         consignment = self.consignment_edit.text().strip()
         if not consignment:
             raise ValueError("Consignment name is required")
@@ -3333,16 +3190,16 @@ class AddCoilsToStockDialog(QDialog):
             raise ValueError("Add at least one coil")
         return consignment, coils
 
-    def _save(self):
+    def _save_receive(self):
         try:
-            consignment, coils = self._validate()
+            consignment, coils = self._validate_receive()
         except ValueError as e:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(self, "Invalid Input", str(e))
             return
 
         supplier = self.supplier_edit.text().strip() or ""
-        material = self.material_combo.currentText().strip() or "HR"
+        material = self.material_combo.value() or "HR"
         received_on = self.received_edit.date().toString("yyyy-MM-dd")
 
         try:
@@ -3352,7 +3209,287 @@ class AddCoilsToStockDialog(QDialog):
             QMessageBox.critical(self, "Database Error", str(e))
             return
 
-        self.accept()
+        # Refresh stock tab so newly received coils show up
+        self._refresh_stock()
+        # Switch to Stock tab so user sees the result
+        self.tabs.setCurrentIndex(1)
+
+    # ========================================================= Tab 2: Stock (Calculate)
+    def _build_stock_tab(self):
+        lay = QVBoxLayout(self.tab_stock)
+        lay.setContentsMargins(16, 14, 16, 14)
+        lay.setSpacing(10)
+
+        lay.addWidget(SectionTitle("Coil Stock"))
+
+        # Header bar: summary chips + refresh
+        header = QHBoxLayout()
+        header.setSpacing(12)
+
+        self.summary_labels = {}
+        for label, value, color in [
+            ("Total", "0", INK),
+            ("Full", "0", GREEN),
+            ("Low", "0", BLUE),
+            ("Empty", "0", SCRAP_RED),
+            ("Remaining (kg)", "0.000", INK),
+        ]:
+            chip = QFrame()
+            chip.setStyleSheet("QFrame{background:#FFFFFF;border:1px solid %s;border-radius:4px;}" % LINE)
+            chip_lay = QVBoxLayout(chip)
+            chip_lay.setContentsMargins(10, 6, 10, 6)
+            chip_lay.setSpacing(2)
+            val_lbl = mk_label(value, 12, color, QFont.Weight.DemiBold)
+            val_lbl.setAlignment(Qt.AlignCenter)
+            key_lbl = mk_label(label, 7.5, MUTED)
+            key_lbl.setAlignment(Qt.AlignCenter)
+            chip_lay.addWidget(val_lbl)
+            chip_lay.addWidget(key_lbl)
+            header.addWidget(chip)
+            self.summary_labels[label] = val_lbl
+        header.addStretch(1)
+
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.setFixedSize(70, 30)
+        refresh_btn.setFont(make_font(9, QFont.Weight.Medium))
+        refresh_btn.setStyleSheet(OUTLINE_QSS)
+        refresh_btn.setAutoDefault(False)
+        refresh_btn.clicked.connect(self._refresh_stock)
+        header.addWidget(refresh_btn)
+
+        lay.addLayout(header)
+
+        # Compact table of coils (skeleton design: no grid, alternating rows, colored header)
+        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView
+
+        self.stock_table = QTableWidget(0, 7)
+        self.stock_table.setHorizontalHeaderLabels([
+            "Coil Code", "Consignment", "Thick (mm)", "Width (mm)", "Original (kg)", "Remaining (kg)", "Status",
+        ])
+        self.stock_table.setShowGrid(False)
+        self.stock_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.stock_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.stock_table.setAlternatingRowColors(True)
+        self.stock_table.setStyleSheet("QTableWidget{background:#FFFFFF;border:1px solid %s;}" % LINE)
+        hh = self.stock_table.horizontalHeader()
+        hh.setFixedHeight(30)
+        hh.setFont(make_font(9, QFont.Weight.DemiBold))
+        hh.setStyleSheet("QHeaderView::section{background:%s;border:none;border-bottom:1px solid %s;padding:0 8px;color:%s;}" % (WINDOW_BG, LINE, INK))
+        hh.setSectionResizeMode(0, QHeaderView.Stretch)
+        hh.setSectionResizeMode(1, QHeaderView.Stretch)
+        hh.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        hh.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        hh.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        hh.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        hh.setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        self.stock_table.verticalHeader().setDefaultSectionSize(30)
+        self.stock_table.verticalHeader().setVisible(False)
+        lay.addWidget(self.stock_table, 1)
+
+    def _refresh_stock(self):
+        """Rebuild the stock table from db.stock_status()."""
+        stock_data = self.db.stock_status()
+
+        total = len(stock_data)
+        full = sum(1 for s in stock_data if s["status"] == "full")
+        low = sum(1 for s in stock_data if s["status"] == "low")
+        empty = sum(1 for s in stock_data if s["status"] == "empty")
+        total_remaining = sum(s["remaining_kg"] for s in stock_data)
+
+        self.summary_labels["Total"].setText(str(total))
+        self.summary_labels["Full"].setText(str(full))
+        self.summary_labels["Low"].setText(str(low))
+        self.summary_labels["Empty"].setText(str(empty))
+        self.summary_labels["Remaining (kg)"].setText(f"{total_remaining:,.3f}")
+
+        STATUS_COLORS = {
+            "full": (GREEN, "Full"),
+            "low": (BLUE, "Low"),
+            "empty": (SCRAP_RED, "Empty"),
+        }
+
+        self.stock_table.setRowCount(0)
+        for coil in stock_data:
+            status = coil["status"]
+            fg, status_text = STATUS_COLORS.get(status, (INK, status.title()))
+
+            r = self.stock_table.rowCount()
+            self.stock_table.insertRow(r)
+
+            def item(text, align=None, bold=False, color=INK, editable=False):
+                it = QTableWidgetItem(text)
+                it.setTextAlignment(align or Qt.AlignLeft | Qt.AlignVCenter)
+                if bold:
+                    it.setFont(make_font(9, QFont.Weight.DemiBold))
+                else:
+                    it.setFont(make_font(9))
+                it.setForeground(QColor(color))
+                if not editable:
+                    it.setFlags(it.flags() & ~Qt.ItemIsEditable)
+                return it
+
+            self.stock_table.setItem(r, 0, item(coil["code"], bold=True, color=INK))
+            self.stock_table.setItem(r, 1, item(coil["consignment"], color=MUTED))
+            self.stock_table.setItem(r, 2, item("%.3f" % coil["thickness_mm"], align=Qt.AlignCenter | Qt.AlignVCenter))
+            self.stock_table.setItem(r, 3, item("%.0f" % coil["width_mm"], align=Qt.AlignCenter | Qt.AlignVCenter))
+            self.stock_table.setItem(r, 4, item("%.3f" % coil["weight_kg"], align=Qt.AlignCenter | Qt.AlignVCenter))
+            self.stock_table.setItem(r, 5, item("%.3f" % coil["remaining_kg"], align=Qt.AlignCenter | Qt.AlignVCenter, bold=True))
+            status_item = item(status_text, align=Qt.AlignCenter | Qt.AlignVCenter, bold=True, color=fg)
+            self.stock_table.setItem(r, 6, status_item)
+
+        # Update Withdraw tab coil list
+        self._refresh_withdraw_consignments()
+
+    # ========================================================= Tab 3: Withdraw / Debit
+    def _build_withdraw_tab(self):
+        lay = QVBoxLayout(self.tab_withdraw)
+        lay.setContentsMargins(16, 14, 16, 14)
+        lay.setSpacing(12)
+
+        lay.addWidget(SectionTitle("Withdraw / Debit Stock"))
+
+        # --- Withdraw card ---
+        card = QFrame()
+        card.setObjectName("Card")
+        card.setStyleSheet(PANEL_QSS)
+        form = QFormLayout(card)
+        form.setVerticalSpacing(10)
+        form.setHorizontalSpacing(10)
+        form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+
+        # Consignment selector
+        self.withdraw_cons_combo = QComboBox()
+        self.withdraw_cons_combo.setFont(make_font(9))
+        self.withdraw_cons_combo.currentIndexChanged.connect(self._on_consignment_selected_for_withdraw)
+        form.addRow(mk_label("Consignment:"), self.withdraw_cons_combo)
+
+        # Coils to withdraw count
+        self.withdraw_count_spin = QSpinBox()
+        self.withdraw_count_spin.setRange(1, 1)
+        self.withdraw_count_spin.setValue(1)
+        self.withdraw_count_spin.setFont(make_font(9))
+        self.withdraw_count_spin.valueChanged.connect(self._update_withdraw_preview)
+        form.addRow(mk_label("Coils to withdraw:"), self.withdraw_count_spin)
+
+        # Preview label (shows which coils + total kg)
+        self.withdraw_preview_lbl = mk_label("", 9, MUTED)
+        self.withdraw_preview_lbl.setWordWrap(True)
+        form.addRow(mk_label("Will withdraw:"), self.withdraw_preview_lbl)
+
+        self.withdraw_reason_edit = style_edit(QLineEdit())
+        self.withdraw_reason_edit.setPlaceholderText("Reason / job reference (e.g. JO-2026-001 slitting)")
+        form.addRow(mk_label("Reason:"), self.withdraw_reason_edit)
+
+        lay.addWidget(card)
+
+        # Buttons
+        btn_row = QHBoxLayout()
+        btn_row.addStretch(1)
+        clear_btn = QPushButton("Clear")
+        clear_btn.setFixedSize(80, 32)
+        clear_btn.setFont(make_font(9, QFont.Weight.Medium))
+        clear_btn.setStyleSheet(OUTLINE_QSS)
+        clear_btn.setAutoDefault(False)
+        clear_btn.clicked.connect(self._clear_withdraw)
+        btn_row.addWidget(clear_btn)
+
+        save_btn = QPushButton("Record Withdrawal")
+        save_btn.setFixedSize(130, 32)
+        save_btn.setFont(make_font(9, QFont.Weight.DemiBold))
+        save_btn.setStyleSheet(PRIMARY_QSS)
+        save_btn.setAutoDefault(False)
+        save_btn.clicked.connect(self._save_withdraw)
+        btn_row.addWidget(save_btn)
+        lay.addLayout(btn_row)
+        lay.addStretch(1)
+
+        # Internal state: list of (coil_id, code, weight_kg, remaining_kg) for selected consignment
+        self._withdraw_available_coils = []
+
+    def _refresh_withdraw_consignments(self):
+        """Populate the consignment dropdown with consignments that have available coils."""
+        self.withdraw_cons_combo.blockSignals(True)
+        self.withdraw_cons_combo.clear()
+        consignments = self.db.consignments(include_archived=False)
+        for cons in consignments:
+            available = self.db.coils(cons["id"], only_available=True)
+            if available:
+                self.withdraw_cons_combo.addItem(
+                    "%s (%d coils available)" % (cons["name"], len(available)),
+                    cons["id"],
+                )
+        self.withdraw_cons_combo.blockSignals(False)
+        if self.withdraw_cons_combo.count() > 0:
+            self._on_consignment_selected_for_withdraw(0)
+        else:
+            self._withdraw_available_coils = []
+            self.withdraw_count_spin.setRange(1, 1)
+            self.withdraw_count_spin.setValue(1)
+            self.withdraw_preview_lbl.setText("No coils available in any consignment")
+
+    def _on_consignment_selected_for_withdraw(self, index):
+        """When a consignment is selected, load its available coils."""
+        self.withdraw_count_spin.blockSignals(True)
+        self._withdraw_available_coils = []
+        if index < 0 or self.withdraw_cons_combo.itemData(index) is None:
+            self.withdraw_count_spin.setRange(1, 1)
+            self.withdraw_count_spin.setValue(1)
+            self.withdraw_preview_lbl.setText("")
+            self.withdraw_count_spin.blockSignals(False)
+            return
+        cons_id = self.withdraw_cons_combo.itemData(index)
+        coils = self.db.coils(cons_id, only_available=True)
+        for c in coils:
+            self._withdraw_available_coils.append({
+                "id": c["id"],
+                "code": c["code"],
+                "weight_kg": c["weight_kg"],
+                "remaining_kg": c["remaining_kg"],
+            })
+        n = len(self._withdraw_available_coils)
+        self.withdraw_count_spin.setRange(1, max(1, n))
+        self.withdraw_count_spin.setValue(min(1, n))
+        self._update_withdraw_preview()
+        self.withdraw_count_spin.blockSignals(False)
+
+    def _update_withdraw_preview(self):
+        """Show which coils will be withdrawn and their total weight."""
+        n = self.withdraw_count_spin.value()
+        selected = self._withdraw_available_coils[:n]
+        total_kg = sum(c["remaining_kg"] for c in selected)
+        lines = []
+        for c in selected:
+            lines.append("• %s — %.3f kg" % (c["code"], c["remaining_kg"]))
+        lines.append("Total: %d coil(s), %.3f kg" % (len(selected), total_kg))
+        self.withdraw_preview_lbl.setText("\n".join(lines))
+
+    def _clear_withdraw(self):
+        self.withdraw_cons_combo.setCurrentIndex(0)
+        self.withdraw_count_spin.setValue(1)
+        self.withdraw_reason_edit.clear()
+
+    def _save_withdraw(self):
+        if not self._withdraw_available_coils:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Invalid Input", "No coils available to withdraw")
+            return
+        n = self.withdraw_count_spin.value()
+        selected = self._withdraw_available_coils[:n]
+        reason = self.withdraw_reason_edit.text().strip() or "stock withdrawal"
+
+        try:
+            for c in selected:
+                # Debit the coil by its full remaining weight (whole coil goes out)
+                self.db.add_ledger_entry(c["id"], "job", -c["remaining_kg"], reason)
+        except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Database Error", str(e))
+            return
+
+        self._clear_withdraw()
+        self._refresh_stock()
+        # Switch to Stock tab so user sees the updated remaining weight
+        self.tabs.setCurrentIndex(1)
 
 
 # ---------------------------------------------------------------- main window
@@ -3367,8 +3504,7 @@ class MainWindow(QMainWindow):
     save_preset_requested = Signal()
     load_preset_requested = Signal()
     show_job_orders_requested = Signal()
-    show_coil_stock_requested = Signal()
-    add_coils_to_stock_requested = Signal()
+    inventory_requested = Signal()
     params_changed = Signal(dict)  # emits all input parameters
     job_phase_changed = Signal(str)
     job_number_changed = Signal(str)
@@ -3412,8 +3548,7 @@ class MainWindow(QMainWindow):
         b["Save Preset"].clicked.connect(self.save_preset_requested.emit)
         b["Load Preset"].clicked.connect(self.load_preset_requested.emit)
         b["View Job Orders"].clicked.connect(self.show_job_orders_requested.emit)
-        b["View Coil Stock"].clicked.connect(self.show_coil_stock_requested.emit)
-        b["Add Coils to Stock"].clicked.connect(self.add_coils_to_stock_requested.emit)
+        b["Inventory"].clicked.connect(self.inventory_requested.emit)
 
         # Connect TopBar signals to MainWindow signals
         self.topbar.job_phase_changed.connect(self.job_phase_changed.emit)
@@ -3472,20 +3607,6 @@ class MainWindow(QMainWindow):
         """Show the job orders list dialog."""
         dlg = JobOrdersDialog(jobs, self)
         dlg.exec()
-
-    def show_coil_stock(self, stock_data):
-        """Show the coil stock dashboard."""
-        dlg = CoilStockDashboard(stock_data, self)
-        dlg.exec()
-
-    def show_add_coils_to_stock(self):
-        """Show the add coils to stock dialog."""
-        ctrl = getattr(self, '_controller', None)
-        db = ctrl.db if ctrl is not None else None
-        from slitra_window import AddCoilsToStockDialog
-        dlg = AddCoilsToStockDialog(db, self)
-        if dlg.exec():
-            self.set_status("Coils added to stock")
 
     def resizeEvent(self, e):
         super().resizeEvent(e)
