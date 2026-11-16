@@ -22,6 +22,46 @@ MAX_COMBINATIONS_LIMIT = 1_000_000
 DEFAULT_PAGE_SIZE = 500
 
 # ============================================================
+# MATERIAL TYPES (Phase B1-B2)
+# ============================================================
+MATERIAL_DENSITY = {
+    "HR": 7.85,
+    "CR": 7.85,
+    "GI": 7.85,
+    "GL": 7.85,
+    "PPCR": 7.85,
+    "CRBA": 7.85,
+}
+MATERIAL_TYPES = list(MATERIAL_DENSITY)
+THICKNESS_MIN, THICKNESS_MAX = 0.10, 12.00  # mm
+
+
+def theoretical_length(total_weight_kg, width_mm, thickness_mm, material):
+    """Length in meters = weight_kg * 1000 / (width_mm * thickness_mm * density_g_cm3).
+    Raises ValueError for an unknown material, weight/width/thickness <= 0, non-finite values,
+    or thickness outside 0.10-12.00 mm."""
+    if material not in MATERIAL_DENSITY:
+        raise ValueError("Unknown material: %r" % (material,))
+    for name, v in (("weight", total_weight_kg), ("width", width_mm), ("thickness", thickness_mm)):
+        if v is None or not math.isfinite(v) or v <= 0:
+            raise ValueError("%s must be a number above 0" % name)
+    if not (THICKNESS_MIN <= thickness_mm <= THICKNESS_MAX):
+        raise ValueError("thickness must be %.2f to %.2f mm" % (THICKNESS_MIN, THICKNESS_MAX))
+    return (total_weight_kg * 1000.0) / (width_mm * thickness_mm * MATERIAL_DENSITY[material])
+
+
+def validate_coil_weights(weights):
+    """List not empty; every weight finite and above 0 (same rule as the Coil Weights window).
+    Returns (is_valid, error_message)."""
+    if not weights:
+        return False, "Enter the coil weights."
+    for i, w in enumerate(weights):
+        if w is None or not math.isfinite(w) or w <= 0:
+            return False, "Coil %d: the weight must be a number above 0." % (i + 1)
+    return True, ""
+
+
+# ============================================================
 # CALCULATION FUNCTIONS (from coil_slitting_calc.py)
 # ============================================================
 
