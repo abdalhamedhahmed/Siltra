@@ -39,6 +39,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # ---------------------------------------------------------------- import app info
 from app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES
+from reports import REPORT_COLORS
 
 # ---------------------------------------------------------------- colors (fixed hex, light mode only)
 RED = "#D32F2F"
@@ -1188,17 +1189,31 @@ class StripTable(QTableWidget):
 
     def show_vm(self, vm):
         n = len(vm["sizes"])
-        self.setRowCount(n + 1)
+        self.setRowCount(n + 2)  # +2 for total row and scrap row
         for i, s in enumerate(vm["sizes"]):
             col = size_color(i)
             for c, text in enumerate([str(s), str(vm["qty"][i]), str(vm["total_qty"][i]),
                                       "%.2f" % vm["wps"][i], "%.2f" % vm["total_w"][i]]):
                 self._put(i, c, text, col)
+        # Scrap row
+        scrap = vm.get("scrap", 0)
+        if scrap > 0:
+            scrap_col = QColor(REPORT_COLORS['scrap'])
+            scrap_qty = 0
+            scrap_total_qty = 0
+            scrap_wps = vm.get("scrap_per", 0)
+            scrap_total_w = vm.get("scrap_total", 0)
+            for c, text in enumerate(["Scrap", str(scrap_qty), str(scrap_total_qty),
+                                      "%.2f" % scrap_wps, "%.2f" % scrap_total_w]):
+                self._put(n, c, text, scrap_col)
+
+        # Total row
+        total_row = n + 1 if scrap > 0 else n
         for c, text in enumerate(["Total", str(sum(vm["qty"])), str(sum(vm["total_qty"])), "",
                                   "%.2f" % sum(vm["total_w"])]):
             it = QTableWidgetItem(text)
             it.setData(Qt.ItemDataRole.UserRole + 1, "total")
-            self.setItem(n, c, it)
+            self.setItem(total_row, c, it)
 
 
 # ---------------------------------------------------------------- input panel
@@ -1296,18 +1311,19 @@ class CoilWeightsDialog(QDialog):
     """Enter the weight of every coil. Any number of coils; paste a column from Excel."""
     OUTLIER = 0.30       # a weight more than 30% away from the median gets an amber tint
 
-    def __init__(self, parent, weights):
+    def __init__(self, parent, weights, consignment="HR"):
         super().__init__(parent)
         self.setWindowTitle("Coil Weights")
         self.setModal(True)
         self.setStyleSheet("QDialog{background:%s;}" % WINDOW_BG)
-        self.setMinimumSize(420, 440)
-        self.resize(440, 580)
+        self.setMinimumSize(500, 440)
+        self.resize(520, 580)
         self._building = False
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.setInterval(120)
         self._timer.timeout.connect(self._refresh)
+        self.consignment = consignment
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(14, 12, 14, 12)
@@ -1340,13 +1356,15 @@ class CoilWeightsDialog(QDialog):
         row2.addWidget(self.fill_btn)
         outer.addLayout(row2)
 
-        self.table = WeightTable(0, 2)
+        self.table = WeightTable(0, 3)
         base_table(self.table, 28, 24)
-        self.table.setHorizontalHeaderLabels(["Coil", "Weight (kg)"])
+        self.table.setHorizontalHeaderLabels(["Coil Name", "Coil #", "Weight (kg)"])
         hh = self.table.horizontalHeader()
         hh.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
-        hh.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        hh.resizeSection(0, 70)
+        hh.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        hh.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        hh.resizeSection(0, 120)
+        hh.resizeSection(1, 60)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -1355,7 +1373,7 @@ class CoilWeightsDialog(QDialog):
                                    QAbstractItemView.EditTrigger.AnyKeyPressed |
                                    QAbstractItemView.EditTrigger.SelectedClicked)
         self.delegate = WeightDelegate(self.table)
-        self.table.setItemDelegateForColumn(1, self.delegate)
+        self.table.setItemDelegateForColumn(2, self.delegate)
         outer.addWidget(self.table, 1)
 
         self.sum1 = mk_label("", 10, INK, QFont.Weight.DemiBold)
@@ -1396,7 +1414,7 @@ class CoilWeightsDialog(QDialog):
         self.apply_btn.clicked.connect(self._apply)
         QShortcut(QKeySequence("Ctrl+Return"), self, activated=self._apply)
         self._refresh()
-        self.table.setCurrentCell(0, 1)
+        self.table.setCurrentCell(0, 2)
         self.table.setFocus()
 
     # -- table helpers
@@ -1405,20 +1423,30 @@ class CoilWeightsDialog(QDialog):
         old = self.table.rowCount()
         self.table.setRowCount(n)
         for r in range(old, n):
-            it0 = QTableWidgetItem(str(r + 1))
+            # Coil Name (read-only): {consignment}-{r+1}
+            coil_name = f"{self.consignment}-{r + 1}"
+            it0 = QTableWidgetItem(coil_name)
             it0.setFlags(Qt.ItemFlag.ItemIsEnabled)
             it0.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.table.setItem(r, 0, it0)
-            v = weights[r] if (weights and r < len(weights)) else None
-            it1 = QTableWidgetItem("" if v is None else fmt_weight(v))
+
+            # Coil # (read-only)
+            it1 = QTableWidgetItem(str(r + 1))
+            it1.setFlags(Qt.ItemFlag.ItemIsEnabled)
             it1.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             self.table.setItem(r, 1, it1)
+
+            # Weight (editable)
+            v = weights[r] if (weights and r < len(weights)) else None
+            it2 = QTableWidgetItem("" if v is None else fmt_weight(v))
+            it2.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.table.setItem(r, 2, it2)
         self._building = False
 
     def _values(self):
         out = []
         for r in range(self.table.rowCount()):
-            it = self.table.item(r, 1)
+            it = self.table.item(r, 2)
             out.append(parse_weight(it.text()) if it else None)
         return out
 
@@ -1436,8 +1464,8 @@ class CoilWeightsDialog(QDialog):
     def _advance(self, row):
         nxt = row + 1
         if nxt < self.table.rowCount():
-            self.table.setCurrentCell(nxt, 1)
-            self.table.editItem(self.table.item(nxt, 1))
+            self.table.setCurrentCell(nxt, 2)
+            self.table.editItem(self.table.item(nxt, 2))
 
     def _refresh(self):
         vals = self._values()
@@ -1456,7 +1484,7 @@ class CoilWeightsDialog(QDialog):
         self._building = True
         med = statistics.median(filled) if len(filled) >= 3 else None
         for r, v in enumerate(vals):
-            it = self.table.item(r, 1)
+            it = self.table.item(r, 2)
             if it is None:
                 continue
             if med and v and abs(v - med) / med > self.OUTLIER:
@@ -1486,7 +1514,7 @@ class CoilWeightsDialog(QDialog):
             note = "Number of coils changed to %d. " % need
         self._building = True
         for i, tok in enumerate(toks):
-            self.table.item(start + i, 1).setText(tok)
+            self.table.item(start + i, 2).setText(tok)
         self._building = False
         self._refresh()
         self.msg.set_color(MUTED)
@@ -1500,14 +1528,14 @@ class CoilWeightsDialog(QDialog):
             return
         self._building = True
         for r in range(self.table.rowCount()):
-            self.table.item(r, 1).setText(fmt_weight(v))
+            self.table.item(r, 2).setText(fmt_weight(v))
         self._building = False
         self._refresh()
 
     def _clear_all(self):
         self._building = True
         for r in range(self.table.rowCount()):
-            self.table.item(r, 1).setText("")
+            self.table.item(r, 2).setText("")
         self._building = False
         self._refresh()
 
@@ -1519,8 +1547,8 @@ class CoilWeightsDialog(QDialog):
             return
         bad = [i for i, v in enumerate(vals) if v is None]
         if bad:
-            self.table.setCurrentCell(bad[0], 1)
-            self.table.scrollToItem(self.table.item(bad[0], 1))
+            self.table.setCurrentCell(bad[0], 2)
+            self.table.scrollToItem(self.table.item(bad[0], 2))
             self.table.setFocus()
             self.msg.set_full("%d weight(s) missing or invalid, first: coil %d." % (len(bad), bad[0] + 1))
             return
@@ -1531,6 +1559,9 @@ class CoilWeightsDialog(QDialog):
 
 
 class InputPanel(QFrame):
+    material_changed = Signal(str)
+    thickness_changed = Signal(float)
+    theoretical_length_changed = Signal(float)
 
     def __init__(self):
         super().__init__()
@@ -1539,6 +1570,19 @@ class InputPanel(QFrame):
         self.weights = []          # one entry per coil when there are 2+ coils (float or None)
         self._single = None        # the weight when there is 1 coil (typed inline)
         self._mode_inline = None
+        self.material_type = "HR"  # default material
+        self.consignment_name = "HR"
+
+        # Material density map (g/cm³) - all steel types
+        self.MATERIAL_DENSITY = {
+            'HR': 7.85,
+            'CR': 7.85,
+            'GI': 7.85,
+            'GL': 7.85,
+            'PPCR': 7.85,
+            'CRBA': 7.85,
+        }
+
         outer = QVBoxLayout(self)
         outer.setContentsMargins(12, 10, 12, 10)
         outer.setSpacing(8)
@@ -1549,12 +1593,29 @@ class InputPanel(QFrame):
         form.setVerticalSpacing(6)
         form.setColumnStretch(0, 1)
         r = 0
+
+        # 1. Consignment (read-write, auto-default from material type)
+        self.consignment_edit = style_edit(QLineEdit())
+        self.consignment_edit.setPlaceholderText("Auto-filled from material type")
+        form.addWidget(mk_label("Consignment:"), r, 0)
+        form.addWidget(self.consignment_edit, r, 1)
+        r += 1
+
+        # 2. Material Type chip row (6 types)
+        self.material_chip_widget = self._create_material_chip_row()
+        form.addWidget(mk_label("Material Type:"), r, 0)
+        form.addWidget(self.material_chip_widget, r, 1)
+        r += 1
+
+        # 3. Number of Coils
         self.coils_edit = style_edit(CoilCountEdit())
         self.coils_edit.setValidator(QIntValidator(1, MAX_COILS, self))
         self.coils_edit.setToolTip("Press Insert (or F2) to enter the weight of each coil")
         form.addWidget(mk_label("Number of coils:"), r, 0)
         form.addWidget(self.coils_edit, r, 1)
         r += 1
+
+        # 4. Coil Weight / Avg Weight
         self.avg_label = mk_label("Coil weight (kg):")
         self.avg_edit = style_edit(AvgEdit())
         form.addWidget(self.avg_label, r, 0)
@@ -1574,14 +1635,44 @@ class InputPanel(QFrame):
         sr.addWidget(self.edit_btn)
         form.addWidget(self.summary_row, r, 0, 1, 2)
         r += 1
+
+        # 5. Thickness (mm)
+        self.thickness_edit = QDoubleSpinBox()
+        self.thickness_edit.setRange(0.001, 50.0)
+        self.thickness_edit.setDecimals(3)
+        self.thickness_edit.setSingleStep(0.01)
+        self.thickness_edit.setValue(0.5)
+        self.thickness_edit.setFixedSize(100, 26)
+        self.thickness_edit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.thickness_edit.setFont(make_font(9.5, QFont.Weight.Medium))
+        self.thickness_edit.setStyleSheet(EDIT_QSS)
+        form.addWidget(mk_label("Thickness (mm):"), r, 0)
+        form.addWidget(self.thickness_edit, r, 1)
+        r += 1
+
+        # 6. Theoretical Length (m) - read-only
+        self.theoretical_length_label = QLabel("— m")
+        self.theoretical_length_label.setFixedHeight(26)
+        self.theoretical_length_label.setFont(make_font(9.5, QFont.Weight.DemiBold))
+        self.theoretical_length_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.theoretical_length_label.setStyleSheet("QLabel{background:#F2F4F7;border:1px solid #AEB7C2;border-radius:3px;padding:0 4px;color:%s;}" % INK)
+        form.addWidget(mk_label("Theoretical Length (m):"), r, 0)
+        form.addWidget(self.theoretical_length_label, r, 1)
+        r += 1
+
+        # 7. Coil Width (mm)
         self.width_edit = style_edit(QLineEdit())
         form.addWidget(mk_label("Coil width (mm):"), r, 0)
         form.addWidget(self.width_edit, r, 1)
         r += 1
+
+        # 8. Strip sizes count
         self.sizes_box = make_combo([str(i) for i in range(0, 8)])
         form.addWidget(mk_label("Strip sizes count:"), r, 0)
         form.addWidget(self.sizes_box, r, 1)
         r += 1
+
+        # 9. Scrap range
         rng = QWidget()
         rng.setFixedSize(100, 26)
         rl = QHBoxLayout(rng)
@@ -1595,6 +1686,8 @@ class InputPanel(QFrame):
         form.addWidget(mk_label("Scrap range (mm):"), r, 0)
         form.addWidget(rng, r, 1)
         r += 1
+
+        # 10. At least one of each size
         self.every = QCheckBox("At least one of each size")
         self.every.setFont(make_font(9))
         form.addWidget(self.every, r, 0, 1, 2)
@@ -1619,16 +1712,116 @@ class InputPanel(QFrame):
         outer.addWidget(self.fit_label)
         outer.addStretch(1)
 
+        # Connections
         self.coils_edit.textChanged.connect(self._on_count)
         self.coils_edit.insertPressed.connect(self.open_weights)
         self.avg_edit.activated.connect(self.open_weights)
         self.avg_edit.textEdited.connect(self._on_avg_typed)
         self.edit_btn.clicked.connect(self.open_weights)
         self.sizes_box.currentIndexChanged.connect(self._relayout_sizes)
-        for ed in [self.width_edit] + self.size_edits:       # the fit bar follows what is typed
+        for ed in [self.width_edit] + self.size_edits:
             ed.textChanged.connect(self._update_fit)
+
+        # New field connections
+        self.thickness_edit.valueChanged.connect(self._on_thickness_changed)
+        self.width_edit.textChanged.connect(self._recalculate_theoretical_length)
+        self.consignment_edit.textChanged.connect(self._recalculate_theoretical_length)
+        for btn, mat in self._material_buttons:
+            btn.clicked.connect(lambda checked, m=mat: self._on_material_changed(m))
+
         self._relayout_sizes()
         self.refresh()
+
+    def _create_material_chip_row(self):
+        """Create horizontal chip row with 6 material type buttons."""
+        # Use a scroll area to prevent squeezing
+        from PySide6.QtWidgets import QScrollArea
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setFixedHeight(32)
+        scroll.setStyleSheet("QScrollArea{border:none;background:transparent;}")
+
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        self._material_buttons = []
+        materials = ['HR', 'CR', 'GI', 'GL', 'PPCR', 'CRBA']
+        for mat in materials:
+            btn = QPushButton(mat)
+            btn.setCheckable(True)
+            btn.setFixedHeight(26)
+            btn.setFont(make_font(9, QFont.Weight.Medium))
+            # Wider padding for longer names (PPCR, CRBA)
+            padding = "0 16px" if len(mat) > 3 else "0 12px"
+            btn.setStyleSheet("""
+                QPushButton{background:#FFFFFF;color:%s;border:1px solid #AEB7C2;border-radius:4px;padding:%s;}
+                QPushButton:checked{background:%s;color:#FFFFFF;border:1px solid %s;}
+                QPushButton:hover:!checked{background:#F2F4F7;}
+            """ % (INK, padding, RED, RED))
+            layout.addWidget(btn)
+            self._material_buttons.append((btn, mat))
+
+        # Set default (HR)
+        self._material_buttons[0][0].setChecked(True)
+        layout.addStretch(1)
+
+        scroll.setWidget(widget)
+        return scroll
+
+    def _on_material_changed(self, material):
+        """Handle material type change - update consignment and theoretical length."""
+        self.material_type = material
+
+        # Auto-fill consignment if it's empty or matches the old material pattern
+        current_consignment = self.consignment_edit.text().strip()
+        if not current_consignment or current_consignment == self.consignment_name or current_consignment.startswith(self.consignment_name.rstrip('0123456789')):
+            # First time or still using auto-generated name
+            self.consignment_name = material
+            self.consignment_edit.setText(material)
+
+        self.material_changed.emit(material)
+        self._recalculate_theoretical_length()
+
+    def _on_thickness_changed(self, value):
+        """Handle thickness change - recalculate theoretical length."""
+        self.thickness_changed.emit(value)
+        self._recalculate_theoretical_length()
+
+    def _recalculate_theoretical_length(self):
+        """Recalculate theoretical length from total weight, width, thickness, and material density."""
+        try:
+            total_weight = self.get_avg() * self.get_coils()
+            width = self.get_width()
+            thickness = self.thickness_edit.value()
+            density = self.MATERIAL_DENSITY.get(self.material_type, 7.85)
+
+            if width > 0 and thickness > 0 and total_weight > 0:
+                # Length (m) = weight_kg * 1e6 / (width_mm * thickness_mm * density_g_cm3)
+                length_m = (total_weight * 1_000_000) / (width * thickness * density)
+                self.theoretical_length_label.setText(f"{length_m:.1f} m")
+                self.theoretical_length_changed.emit(length_m)
+            else:
+                self.theoretical_length_label.setText("— m")
+                self.theoretical_length_changed.emit(0.0)
+        except Exception:
+            self.theoretical_length_label.setText("— m")
+            self.theoretical_length_changed.emit(0.0)
+
+    def set_theoretical_length(self, length_m):
+        """Set theoretical length from controller (e.g., after calculation)."""
+        if length_m > 0:
+            self.theoretical_length_label.setText(f"{length_m:.1f} m")
+        else:
+            self.theoretical_length_label.setText("— m")
+
+    def set_consignment(self, consignment: str):
+        """Set consignment from controller (e.g., after material change)."""
+        self.consignment_edit.setText(consignment)
+        self.consignment_name = consignment
 
     # -- coil count and weights
     def _count(self):
@@ -1692,7 +1885,7 @@ class InputPanel(QFrame):
             w = [self._single]
         else:
             w = list(self.weights) if len(self.weights) == n else [None] * n
-        dlg = CoilWeightsDialog(self.window(), w)
+        dlg = CoilWeightsDialog(self.window(), w, self.consignment_edit.text().strip() or "HR")
         if dlg.exec() == QDialog.DialogCode.Accepted:
             self.apply_weights(dlg.weights())
 
@@ -1772,6 +1965,13 @@ class InputPanel(QFrame):
             self.every.setChecked(False)
             self.refresh()
             self._update_fit()
+            # Reset new fields
+            self.consignment_edit.clear()
+            self.thickness_edit.setValue(0.5)
+            self._material_buttons[0][0].setChecked(True)
+            self.material_type = "HR"
+            self.consignment_name = "HR"
+            self.theoretical_length_label.setText("— m")
             return
         self.apply_weights([float(w) for w in cfg["weights"]])
         self.sizes_box.setCurrentText(str(len(cfg["sizes"])))
@@ -1783,7 +1983,23 @@ class InputPanel(QFrame):
             ed.clear()
         for ed, sz in zip(self.size_edits, cfg["sizes"]):
             ed.setText(str(sz))
+
+        # Restore new fields if present
+        if "consignment" in cfg:
+            self.consignment_edit.setText(cfg["consignment"])
+            self.consignment_name = cfg["consignment"]
+        if "material_type" in cfg:
+            self.material_type = cfg["material_type"]
+            # Find and check the corresponding button
+            for btn, mat in self._material_buttons:
+                if mat == cfg["material_type"]:
+                    btn.setChecked(True)
+                    break
+        if "thickness" in cfg:
+            self.thickness_edit.setValue(cfg["thickness"])
+
         self._update_fit()
+        self._recalculate_theoretical_length()
 
     # --- Getter methods for controller ---
     def get_coils(self):
@@ -1839,6 +2055,10 @@ class InputPanel(QFrame):
             "smin": self.get_smin(),
             "smax": self.get_smax(),
             "every": self.get_every(),
+            "consignment": self.consignment_edit.text().strip(),
+            "material_type": self.material_type,
+            "thickness": self.thickness_edit.value(),
+            "theoretical_length_m": float(self.theoretical_length_label.text().replace(" m", "")) if self.theoretical_length_label.text() != "— m" else 0.0,
         }
         return params
 
@@ -2296,9 +2516,12 @@ LogoMark = LogoWidget
 class TopBar(QFrame):
     # name, full text, compact text
     SPEC = [("Calculate", "Calculate", "Calculate"), ("Cancel", "Cancel", "✕"), ("Clear", "Clear", "⌫"),
-            ("Export PDF", "Export PDF", "PDF"), ("Export Excel", "Export Excel", "XLS"),
+            ("Export Job Order", "Export Job Order", "Job Order"),
             ("Save Preset", "Save Preset", "Save"), ("Load Preset", "Load Preset", "Load"),
             ("View Log", "View Log", "Log")]
+
+    job_phase_changed = Signal(str)
+    job_number_changed = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -2326,6 +2549,25 @@ class TopBar(QFrame):
             b.setStyleSheet(PRIMARY_QSS if name == "Calculate" else OUTLINE_QSS)
             lay.addWidget(b)
             self.buttons[name] = b
+
+        # Order Phase dropdown (left of Export button)
+        self.phase_combo = QComboBox()
+        self.phase_combo.addItems(["Initial Job Order", "Final Job Order"])
+        self.phase_combo.setFixedSize(160, 32)
+        self.phase_combo.setFont(make_font(9, QFont.Weight.Medium))
+        self.phase_combo.setStyleSheet("QComboBox{background:#FFFFFF;border:1px solid #AEB7C2;border-radius:4px;padding:0 10px;}"
+                                       "QComboBox:hover{border:1px solid %s;}" % RED)
+        self.phase_combo.currentTextChanged.connect(self.job_phase_changed.emit)
+        lay.addWidget(self.phase_combo)
+
+        # Job Number badge (right of Export button)
+        self.job_number_badge = QLabel("J-2026-0001")
+        self.job_number_badge.setFixedHeight(32)
+        self.job_number_badge.setFont(make_font(9, QFont.Weight.DemiBold))
+        self.job_number_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.job_number_badge.setStyleSheet("QLabel{background:#1F2933;color:#FFFFFF;border-radius:4px;padding:0 10px;}")
+        lay.addWidget(self.job_number_badge)
+
         self.compact = False
 
     def set_compact(self, compact):
@@ -2369,12 +2611,13 @@ class MainWindow(QMainWindow):
     calculate_requested = Signal()
     clear_requested = Signal()
     cancel_requested = Signal()
-    export_pdf_requested = Signal()
-    export_excel_requested = Signal()
+    export_job_order_requested = Signal()
     save_preset_requested = Signal()
     load_preset_requested = Signal()
     view_log_requested = Signal()
     params_changed = Signal(dict)  # emits all input parameters
+    job_phase_changed = Signal(str)
+    job_number_changed = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -2411,11 +2654,14 @@ class MainWindow(QMainWindow):
         b["Calculate"].clicked.connect(self.calculate_requested.emit)
         b["Clear"].clicked.connect(self.clear_requested.emit)
         b["Cancel"].clicked.connect(self.cancel_requested.emit)
-        b["Export PDF"].clicked.connect(self.export_pdf_requested.emit)
-        b["Export Excel"].clicked.connect(self.export_excel_requested.emit)
+        b["Export Job Order"].clicked.connect(self.export_job_order_requested.emit)
         b["Save Preset"].clicked.connect(self.save_preset_requested.emit)
         b["Load Preset"].clicked.connect(self.load_preset_requested.emit)
         b["View Log"].clicked.connect(self.view_log_requested.emit)
+
+        # Connect TopBar signals to MainWindow signals
+        self.topbar.job_phase_changed.connect(self.job_phase_changed.emit)
+        self.topbar.job_number_changed.connect(self.job_number_changed.emit)
 
         # Connect input panel changes to params_changed signal
         self.left.coils_edit.textChanged.connect(self._emit_params)
@@ -2427,6 +2673,11 @@ class MainWindow(QMainWindow):
         self.left.every.stateChanged.connect(self._emit_params)
         for ed in self.left.size_edits:
             ed.editingFinished.connect(self._emit_params)
+
+        # Connect new InputPanel signals
+        self.left.material_changed.connect(self._emit_params)
+        self.left.thickness_changed.connect(self._emit_params)
+        self.left.theoretical_length_changed.connect(self._emit_params)
 
         # Start in empty state
         self.show_empty()

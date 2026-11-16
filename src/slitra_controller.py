@@ -39,7 +39,9 @@ from app_info import (
 import core
 import reports
 import view_models
+import material_calc
 from state import MemoryStore
+from slitra_db import SlitraDB
 
 
 class CalculationWorker(QObject):
@@ -98,6 +100,9 @@ class SlitraController(QObject):
         self.is_calculating = False
         self.memory = MemoryStore()
 
+        # Database - Phase E: Job Order persistence
+        self.db = SlitraDB(r"C:\Slitra\data\slitra.db")
+
         # Settings
         self.settings_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), 'settings.json'
@@ -127,14 +132,22 @@ class SlitraController(QObject):
         self.window.calculate_requested.connect(self.on_calculate)
         self.window.clear_requested.connect(self.on_clear)
         self.window.cancel_requested.connect(self.on_cancel)
-        self.window.export_pdf_requested.connect(self.on_export_pdf)
-        self.window.export_excel_requested.connect(self.on_export_excel)
+        self.window.export_job_order_requested.connect(self.on_export_pdf)
         self.window.save_preset_requested.connect(self.on_save_preset)
         self.window.load_preset_requested.connect(self.on_load_preset)
         self.window.view_log_requested.connect(self.on_view_log)
 
         # Live parameter updates
         self.window.params_changed.connect(self.on_params_changed)
+
+        # Phase B: TopBar signals
+        self.window.job_phase_changed.connect(self.on_job_phase_changed)
+        self.window.job_number_changed.connect(self.on_job_number_changed)
+
+        # Phase C: InputPanel signals
+        self.window.left.material_changed.connect(self.on_material_changed)
+        self.window.left.thickness_changed.connect(self.on_thickness_changed)
+        self.window.left.theoretical_length_changed.connect(self.on_theoretical_length_changed)
 
     # ============================================================
     # SIGNAL HANDLERS
@@ -176,6 +189,54 @@ class SlitraController(QObject):
         self.calc_thread.finished.connect(self.calc_thread.deleteLater)
 
         self.calc_thread.start()
+
+    @Slot(str)
+    def on_material_changed(self, material: str):
+        """Handle material type change from InputPanel."""
+        self.current_params['material_type'] = material
+        # Auto-fill consignment if empty or matching old material pattern
+        if not self.current_params.get('consignment') or self.current_params.get('consignment') == '':
+            consignment = self.db.next_consignment_code(material)
+            self.current_params['consignment'] = consignment
+            self.window.left.set_consignment(consignment)
+        self._recalculate_theoretical_length()
+
+    @Slot(float)
+    def on_thickness_changed(self, thickness: float):
+        """Handle thickness change from InputPanel."""
+        self.current_params['thickness'] = thickness
+        self._recalculate_theoretical_length()
+
+    @Slot(float)
+    def on_theoretical_length_changed(self, length_m: float):
+        """Handle theoretical length update from InputPanel."""
+        self.current_params['theoretical_length_m'] = length_m
+
+    @Slot(str)
+    def on_job_phase_changed(self, phase: str):
+        """Handle Order Phase change from TopBar."""
+        self.current_params['order_phase'] = phase
+
+    @Slot(str)
+    def on_job_number_changed(self, job_number: str):
+        """Handle Job Number change from TopBar."""
+        self.current_params['job_number'] = job_number
+
+    def _recalculate_theoretical_length(self):
+        """Recalculate theoretical length using material-weight engine."""
+        params = self.current_params
+        material = params.get('material_type', 'HR')
+        total_weight = params.get('avg', 0.0) * params.get('coils', 1)
+        width = params.get('width', 0)
+        thickness = params.get('thickness', 0.5)
+
+        if total_weight > 0 and width > 0 and thickness > 0:
+            length_m = material_calc.CoilWeightCalculator.reverse_length(
+                material, total_weight, width, thickness
+            )
+            params['theoretical_length_m'] = length_m
+            # Update UI
+            self.window.left.set_theoretical_length(length_m)
 
     @Slot(int)
     def on_calc_progress(self, count: int):
@@ -240,60 +301,130 @@ class SlitraController(QObject):
 
     @Slot()
     def on_export_pdf(self):
-        """Export current results to PDF."""
+        """Export current results to Job Order PDF with database persistence."""
         if not self.current_vm:
             QMessageBox.warning(self.window, "No Data", "No calculation results to export")
             return
 
         filepath, _ = QFileDialog.getSaveFileName(
-            self.window, "Export PDF", f"{APP_NAME}_CuttingPlan.pdf", "PDF Files (*.pdf)"
+            self.window, "Export Job Order", f"{APP_NAME}_JobOrder.pdf", "PDF Files (*.pdf)"
         )
         if not filepath:
             return
 
-        self.window.set_status("Exporting PDF...")
+        self.window.set_status("Exporting Job Order...")
         QApplication.processEvents()
 
         try:
+            params = self.current_params
+
+            # Validate consignment for export (must be non-empty and unique in DB)
+            consignment = params.get('consignment', '').strip()
+            if not consignment:
+                QMessageBox.warning(self.window, "Missing Input", "Consignment name is required for export")
+                return
+
+            # Check if consignment exists in DB; if not, add it
+            consignment_id = None
+            try:
+                # Check if consignment already exists
+                existing = self.db.db.execute(
+                    "SELECT id FROM consignments WHERE name = ?", (consignment,)
+                ).fetchone()
+                if existing:
+                    consignment_id = existing["id"]
+                    # Consignment exists - update coils if needed
+                else:
+                    # Create new consignment with coils
+                    num_coils = params.get('coils', 1)
+                    coil_weights = params.get('weights', [])
+                    if not coil_weights:
+                        avg = params.get('avg', 10000)
+                        coil_weights = [avg] * num_coils
+
+                    width = params.get('width', 1250)
+                    thickness = params.get('thickness', 0.5)
+                    material = params.get('material_type', 'HR')
+
+                    coils_data = []
+                    for i, w in enumerate(coil_weights[:num_coils]):
+                        coils_data.append({
+                            "thickness_mm": thickness,
+                            "width_mm": width,
+                            "weight_kg": w,
+                            "notes": f"Job order coil {i+1}"
+                        })
+
+                    consignment_id = self.db.add_consignment(
+                        name=consignment,
+                        coils=coils_data,
+                        supplier="",
+                        material=material,
+                        received_on="",
+                        notes=f"Created from Job Order export"
+                    )
+            except Exception as db_err:
+                # If consignment creation fails, we still allow export but warn
+                self.window.set_status(f"DB warning: {db_err}")
+                QMessageBox.warning(self.window, "DB Warning", f"Could not persist consignment: {db_err}\nProceeding with PDF export only.")
+
+            # Save calculation to database
+            calc_id = self.db.save_calculation(
+                inputs=params,
+                combos=len(self.all_combinations),
+                lowest_scrap_mm=self.all_combinations[0].get('scrap_mm', 0) if self.all_combinations else None,
+                seconds=0,  # Not tracking calculation time currently
+                consignment_id=consignment_id
+            )
+
+            # Build plan JSON for the job order
+            selected = self.filtered_combinations[self.selected_index]
+            plan_json = {
+                'width': params['width'],
+                'sizes': params['sizes'],
+                'quantities': selected['qs'],
+                'scrap_mm': selected['scrap_mm'],
+                'total_strips': selected['total_strips'],
+                'total_width': selected['total_width'],
+                'material_type': params.get('material_type', 'HR'),
+                'thickness': params.get('thickness', 0.5),
+                'theoretical_length_m': params.get('theoretical_length_m', 0.0),
+            }
+
+            # Create job order in database
+            coil_kgs = {}
+            if consignment_id:
+                # Get coil IDs from the consignment
+                coils = self.db.coils(consignment_id)
+                for i, coil in enumerate(coils[:params.get('coils', 1)]):
+                    coil_kgs[coil['id']] = coil['weight_kg']
+
+            job_id, job_number = self.db.create_job(
+                calc_id=calc_id,
+                formula=f"Formula F{self.selected_index + 1}",
+                plan=plan_json,
+                coil_kgs=coil_kgs,
+                notes=f"Consignment: {consignment}"
+            )
+
+            # Update TopBar with the new job number
+            self.window.topbar.job_number_badge.setText(job_number)
+            self.job_number_changed.emit(job_number)
+
+            # Build report data with job number and order phase
             report_data = self._build_report_data(self.selected_index)
+            # Add job-specific fields to report data
+            report_data['job_number'] = job_number
+            report_data['order_phase'] = params.get('order_phase', 'Initial Job Order')
+            report_data['consignment'] = consignment
 
             success = reports.export_pdf(report_data, filepath, version=APP_VERSION)
             if success:
-                self.window.set_status(f"PDF exported: {os.path.basename(filepath)}")
-                QMessageBox.information(self.window, "Export Complete", f"PDF saved to:\n{filepath}")
+                self.window.set_status(f"Job Order exported: {os.path.basename(filepath)} (Job: {job_number})")
+                QMessageBox.information(self.window, "Export Complete", f"Job Order saved to:\n{filepath}\n\nJob Number: {job_number}")
             else:
-                self.window.set_status("PDF export failed")
-                QMessageBox.warning(self.window, "Export Failed", "Failed to generate PDF")
-        except Exception as e:
-            self.window.set_status(f"Export error: {e}")
-            QMessageBox.critical(self.window, "Export Error", str(e))
-
-    @Slot()
-    def on_export_excel(self):
-        """Export current results to Excel."""
-        if not self.current_vm:
-            QMessageBox.warning(self.window, "No Data", "No calculation results to export")
-            return
-
-        filepath, _ = QFileDialog.getSaveFileName(
-            self.window, "Export Excel", f"{APP_NAME}_CuttingPlan.xlsx", "Excel Files (*.xlsx)"
-        )
-        if not filepath:
-            return
-
-        self.window.set_status("Exporting Excel...")
-        QApplication.processEvents()
-
-        try:
-            report_data = self._build_report_data(self.selected_index)
-
-            success = reports.export_excel(report_data, filepath, version=APP_VERSION)
-            if success:
-                self.window.set_status(f"Excel exported: {os.path.basename(filepath)}")
-                QMessageBox.information(self.window, "Export Complete", f"Excel saved to:\n{filepath}")
-            else:
-                self.window.set_status("Excel export failed")
-                QMessageBox.warning(self.window, "Export Failed", "Failed to generate Excel")
+                self.window.set_status("Job Order export failed")
+                QMessageBox.warning(self.window, "Export Failed", "Failed to generate Job Order")
         except Exception as e:
             self.window.set_status(f"Export error: {e}")
             QMessageBox.critical(self.window, "Export Error", str(e))
@@ -423,6 +554,15 @@ Formula F1 (best combination):
             QMessageBox.warning(self.window, "Missing Input", "Please enter a valid average coil weight")
             return False
 
+        # Phase F: Validate material type and thickness
+        if not params.get('material_type'):
+            QMessageBox.warning(self.window, "Missing Input", "Please select a material type")
+            return False
+
+        if params.get('thickness', 0) <= 0:
+            QMessageBox.warning(self.window, "Missing Input", "Please enter a valid thickness")
+            return False
+
         weights = params.get('weights', [])
         coils = params.get('coils', 1)
         if len(weights) < coils:
@@ -456,12 +596,15 @@ Formula F1 (best combination):
         for c in self.filtered_combinations:
             rows.append((c['scrap_mm'], tuple(c['qs'])))
 
-        # Use plan_vm for the selected combination details
+        # Use plan_vm for the selected combination details - pass material params for weight calc
         vm = view_models.plan_vm({
             'width': coil_width,
             'sizes': sizes,
             'avg': avg_weight,
             'coils': num_coils,
+            'material_type': params.get('material_type', 'HR'),
+            'thickness': params.get('thickness', 0.5),
+            'theoretical_length_m': params.get('theoretical_length_m', 0.0),
         }, scrap, qs)
 
         # Add the additional fields the window expects
@@ -530,6 +673,11 @@ Formula F1 (best combination):
             'total_coil_weight': sum(coil_weights),
             'coil_weights': coil_weights,
             'details': details_result,
+            # Phase D: Material-weight calculation fields
+            'material_type': params.get('material_type', 'HR'),
+            'thickness': params.get('thickness', 0.5),
+            'theoretical_length_m': params.get('theoretical_length_m', 0.0),
+            'consignment': params.get('consignment', ''),
         }
         # Replace the selected entry in filtered_combinations for report generation
         filtered_for_report = self.filtered_combinations[:]
@@ -545,6 +693,11 @@ Formula F1 (best combination):
             'at_least_once': params['every'],
             'total_coil_weight': sum(coil_weights),
             'coil_weights': coil_weights,
+            # Phase D: Material-weight calculation fields
+            'material_type': params.get('material_type', 'HR'),
+            'thickness': params.get('thickness', 0.5),
+            'theoretical_length_m': params.get('theoretical_length_m', 0.0),
+            'consignment': params.get('consignment', ''),
         })
 
     def load_settings(self):

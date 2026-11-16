@@ -201,8 +201,8 @@ def build_report_data(
             'is_scrap': True,
         })
 
-    # Calculate knife positions (cumulative from left)
-    knife_positions = _calculate_knife_positions(strip_sizes, qs, scrap_mm)
+    # Calculate knife positions (cumulative from left with clearance)
+    knife_positions = _calculate_knife_positions(strip_sizes, qs, scrap_mm, CLEARANCE_PER_SIDE)
 
     # Build ID from settings or timestamp
     build_id = settings.get(
@@ -234,6 +234,10 @@ def build_report_data(
         'all_combinations': all_combos,
         'filtered_combinations': filtered_combos,
         'stopped_early': result.get('stopped_early', False),
+        # Phase E: Job order fields
+        'job_number': selected.get('job_number', ''),
+        'order_phase': selected.get('order_phase', 'Initial Job Order'),
+        'consignment': selected.get('consignment', ''),
     }
 
 def _verify_weight_balance(
@@ -296,22 +300,35 @@ def _verify_weight_balance(
     return tot_weight_dec - used_weight, strips_total_w, scrap_weight_total
 
 
-def _calculate_knife_positions(strip_sizes: List[float], qs: List[int], scrap_mm: float = 0.0) -> List[Dict[str, Any]]:
-    """Calculate cumulative knife positions from left edge."""
+CLEARANCE_PER_SIDE = 0.150  # mm, hardcoded default (OptiStack spec)
+
+
+def _calculate_knife_positions(strip_sizes: List[float], qs: List[int], scrap_mm: float = 0.0, clearance: float = CLEARANCE_PER_SIDE) -> List[Dict[str, Any]]:
+    """Calculate cumulative knife positions from left edge with clearance."""
     positions = []
-    cumulative = 0
+    cumulative = 0.0
+    knife_num = 1
     for size, qty in zip(strip_sizes, qs):
         for _ in range(qty):
             cumulative += size
             positions.append({
-                'position': cumulative,
-                'action': 'Cut',
+                'knife': knife_num,
+                'position': round(cumulative, 3),
+                'strip_width': size,
+                'clearance': clearance,
+                'shim_stack': '0.100 + 0.050',  # Fixed shim stack
             })
+            knife_num += 1
+            cumulative += clearance * 2  # clearance per side
     # Last position: only add coil edge if scrap > 0, otherwise it's the same as last cut
     if scrap_mm > 0:
         positions.append({
-            'position': int(cumulative),
-            'action': 'Cut - scrap starts here',
+            'knife': knife_num,
+            'position': round(cumulative, 3),
+            'strip_width': scrap_mm,
+            'clearance': 0,
+            'shim_stack': '—',
+            'action': 'Coil edge (scrap starts here)',
         })
     else:
         # Scrap is 0: the last cut IS the coil edge
@@ -345,12 +362,12 @@ def export_pdf(
     version: str = None
 ) -> bool:
     """
-    Export the cutting plan as a 2-page PDF:
-    Page 1: Cutting Plan Sheet for the selected combination
+    Export the job order as a 2-page PDF:
+    Page 1: Job Order Sheet for the selected combination
     Page 2: Top Combinations table (up to 25 rows)
     """
     if title is None:
-        title = f"{FACTORY_NAME} - Cutting Plan Sheet"
+        title = f"{FACTORY_NAME} - Job Order"
     if version is None:
         version = APP_VERSION
 
@@ -428,7 +445,7 @@ def export_pdf(
     small_body_style = small_body_style_base
     # table_cell_style is defined at module level
 
-    # --- PAGE 1: Cutting Plan Sheet ---
+    # --- PAGE 1: Job Order Sheet ---
 
     # 1. Title band with logo, title, version, date
     # Create a table for the header band
@@ -679,7 +696,7 @@ def export_pdf(
         def build_complete_story():
             story_local = []
 
-            # --- PAGE 1: Cutting Plan Sheet ---
+            # --- PAGE 1: Job Order Sheet ---
             # 1. Title band with logo, title, version, date
             title_data = [[
                 Paragraph(title, title_style),
@@ -716,8 +733,18 @@ def export_pdf(
             coil_params = report_data['coil_params']
             num_coils = coil_params['num_coils']
 
+            # Get material-weight calculation fields from selected combination
+            material_type = selected.get('material_type', 'HR')
+            thickness = selected.get('thickness', 0.5)
+            theoretical_length = selected.get('theoretical_length_m', 0.0)
+            consignment = selected.get('consignment', '')
+
             input_data = []
             input_data.append([Paragraph("<b>Input Parameters</b>", section_header_style), ""])
+            input_data.append([Paragraph("Consignment:", body_style), Paragraph(consignment, body_style)])
+            input_data.append([Paragraph("Material type:", body_style), Paragraph(material_type, body_style)])
+            input_data.append([Paragraph("Thickness (mm):", body_style), Paragraph(f"{thickness:.3f}", body_style)])
+            input_data.append([Paragraph("Theoretical length (m):", body_style), Paragraph(f"{theoretical_length:.1f}", body_style)])
             input_data.append([Paragraph("Number of coils:", body_style), Paragraph(str(num_coils), body_style)])
             input_data.append([Paragraph("Coil width (mm):", body_style), Paragraph(f"{coil_params['coil_width']:.0f}", body_style)])
             input_data.append([Paragraph("Scrap range (mm):", body_style), Paragraph(f"{coil_params['min_scrap']:.0f} to {coil_params['max_scrap']:.0f}", body_style)])
@@ -1333,7 +1360,7 @@ def _create_strip_legend_table(report_data: Dict[str, Any], width: float):
 
 
 def _create_knife_table(report_data: Dict[str, Any], width: float):
-    """Create knife setup table."""
+    """Create knife setup table with 0.150mm clearance per side."""
     from reportlab.platypus import Table, TableStyle, Paragraph
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib import colors
@@ -1345,9 +1372,14 @@ def _create_knife_table(report_data: Dict[str, Any], width: float):
     # If many knives, use two columns
     use_two_cols = len(knife_positions) > 15
 
-    headers = [Paragraph("<b>Knife #</b>", ParagraphStyle('h', fontSize=7, alignment=TA_CENTER)),
-               Paragraph("<b>Position (mm)</b>", ParagraphStyle('h', fontSize=7, alignment=TA_CENTER)),
-               Paragraph("<b>Action</b>", ParagraphStyle('h', fontSize=7, alignment=TA_CENTER))]
+    # New headers with clearance and shim stack columns
+    headers = [
+        Paragraph("<b>Knife #</b>", ParagraphStyle('h', fontSize=7, alignment=TA_CENTER)),
+        Paragraph("<b>Position (mm)</b>", ParagraphStyle('h', fontSize=7, alignment=TA_CENTER)),
+        Paragraph("<b>Strip Width (mm)</b>", ParagraphStyle('h', fontSize=7, alignment=TA_CENTER)),
+        Paragraph("<b>Clearance (mm)</b>", ParagraphStyle('h', fontSize=7, alignment=TA_CENTER)),
+        Paragraph("<b>Shim Stack</b>", ParagraphStyle('h', fontSize=7, alignment=TA_CENTER)),
+    ]
 
     if use_two_cols:
         # Split into two groups
@@ -1358,21 +1390,25 @@ def _create_knife_table(report_data: Dict[str, Any], width: float):
         data1 = [headers]
         for i, kp in enumerate(group1):
             data1.append([
-                Paragraph(str(i+1), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
-                Paragraph(str(int(kp['position'])), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
-                Paragraph(kp['action'], ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('knife', i+1)), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('position', 0)), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('strip_width', 0)), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('clearance', 0.150)), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('shim_stack', '0.100 + 0.050')), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
             ])
 
         data2 = [headers]
         for i, kp in enumerate(group2):
             data2.append([
-                Paragraph(str(mid + i + 1), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
-                Paragraph(str(int(kp['position'])), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
-                Paragraph(kp['action'], ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('knife', mid + i + 1)), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('position', 0)), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('strip_width', 0)), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('clearance', 0.150)), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('shim_stack', '0.100 + 0.050')), ParagraphStyle('r', fontSize=7, alignment=TA_CENTER)),
             ])
 
-        t1 = Table(data1, colWidths=[width*0.15, width*0.2, width*0.15])
-        t2 = Table(data2, colWidths=[width*0.15, width*0.2, width*0.15])
+        t1 = Table(data1, colWidths=[width*0.1, width*0.15, width*0.15, width*0.15, width*0.15])
+        t2 = Table(data2, colWidths=[width*0.1, width*0.15, width*0.15, width*0.15, width*0.15])
 
         for t in [t1, t2]:
             t.setStyle(TableStyle([
@@ -1384,7 +1420,7 @@ def _create_knife_table(report_data: Dict[str, Any], width: float):
             ]))
 
         # Note row
-        note = Paragraph(f"<b>Coil edge: {int(coil_width)} mm</b>", ParagraphStyle('n', parent=table_cell_style, fontSize=7, alignment=TA_LEFT))
+        note = Paragraph(f"<b>Coil edge: {int(coil_width)} mm | Clearance: 0.150 mm per side (OptiStack)</b>", ParagraphStyle('n', parent=table_cell_style, fontSize=7, alignment=TA_LEFT))
 
         combined = Table([[t1, t2], [note, ""]], colWidths=[width/2, width/2])
         combined.setStyle(TableStyle([
@@ -1396,12 +1432,14 @@ def _create_knife_table(report_data: Dict[str, Any], width: float):
         data = [headers]
         for i, kp in enumerate(knife_positions):
             data.append([
-                Paragraph(str(i+1), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
-                Paragraph(str(int(kp['position'])), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
-                Paragraph(kp['action'], ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('knife', i+1)), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('position', 0)), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('strip_width', 0)), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('clearance', 0.150)), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
+                Paragraph(str(kp.get('shim_stack', '0.100 + 0.050')), ParagraphStyle('r', parent=table_cell_style, fontSize=7, alignment=TA_CENTER)),
             ])
 
-        t = Table(data, colWidths=[width*0.15, width*0.2, width*0.15])
+        t = Table(data, colWidths=[width*0.1, width*0.15, width*0.15, width*0.15, width*0.15])
         t.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), hex_color(REPORT_COLORS['section_header'])),
             ('GRID', (0, 0), (-1, -1), 0.5, hex_color(REPORT_COLORS['table_borders'])),
@@ -1448,628 +1486,6 @@ def _create_mix_bar(combo: Dict[str, Any], strip_sizes: List[float], width: floa
 
     return drawing
 
-
-# ============================================================
-# EXCEL EXPORT (using openpyxl)
-# ============================================================
-
-def export_excel(
-    report_data: Dict[str, Any],
-    filepath: str,
-    title: str = None,
-    version: str = None
-) -> bool:
-    """
-    Export the cutting plan as an Excel file with 3 sheets:
-    1. Cutting Plan - same layout as PDF page 1
-    2. Combinations - all combinations with formatting
-    3. Info - calculation parameters and details
-    """
-    if title is None:
-        title = f"{FACTORY_NAME} - Cutting Plan Sheet"
-    if version is None:
-        version = APP_VERSION
-
-    try:
-        import openpyxl
-        from openpyxl.styles import (
-            Font, PatternFill, Alignment, Border, Side, numbers
-        )
-        from openpyxl.utils import get_column_letter
-        from openpyxl.utils.units import inch_to_EMU
-        from openpyxl.drawing.image import Image as XLImage
-        from openpyxl.chart import BarChart, Reference
-        import io
-        from PIL import Image as PILImage, ImageDraw
-        from datetime import datetime
-        from openpyxl.worksheet.properties import PageSetupProperties
-    except ImportError:
-        print("Excel export requires openpyxl and pillow libraries")
-        return False
-
-    wb = openpyxl.Workbook()
-
-    # Helper to convert hex colors to openpyxl format (remove # prefix)
-    def _hex(c):
-        return c[1:] if c.startswith('#') else c
-
-    # Style definitions
-    title_fill = PatternFill(start_color=_hex(REPORT_COLORS['title_band']), end_color=_hex(REPORT_COLORS['title_band']), fill_type='solid')
-    title_font = Font(name='Calibri', size=16, bold=True, color='FFFFFF')
-    subtitle_font = Font(name='Calibri', size=10, color='FFFFFF')
-    section_header_fill = PatternFill(start_color=_hex(REPORT_COLORS['section_header']), end_color=_hex(REPORT_COLORS['section_header']), fill_type='solid')
-    section_header_font = Font(name='Calibri', size=11, bold=True, color='000000')
-    body_font = Font(name='Calibri', size=9, color='000000')
-    bold_font = Font(name='Calibri', size=9, bold=True, color='000000')
-    best_fill = PatternFill(start_color=_hex(REPORT_COLORS['best_row']), end_color=_hex(REPORT_COLORS['best_row']), fill_type='solid')
-    zebra_fill = PatternFill(start_color=_hex(REPORT_COLORS['zebra_rows']), end_color=_hex(REPORT_COLORS['zebra_rows']), fill_type='solid')
-    border_thin = Border(
-        left=Side(style='thin', color=_hex(REPORT_COLORS['table_borders'])),
-        right=Side(style='thin', color=_hex(REPORT_COLORS['table_borders'])),
-        top=Side(style='thin', color=_hex(REPORT_COLORS['table_borders'])),
-        bottom=Side(style='thin', color=_hex(REPORT_COLORS['table_borders'])),
-    )
-    header_border = Border(
-        left=Side(style='thin', color=_hex(REPORT_COLORS['table_borders'])),
-        right=Side(style='thin', color=_hex(REPORT_COLORS['table_borders'])),
-        top=Side(style='thin', color=_hex(REPORT_COLORS['table_borders'])),
-        bottom=Side(style='medium', color=_hex(REPORT_COLORS['table_borders'])),
-    )
-    center_align = Alignment(horizontal='center', vertical='center', wrap_text=True)
-    left_align = Alignment(horizontal='left', vertical='center', wrap_text=True)
-
-    def apply_style(cell, font=body_font, fill=None, align=center_align, border=border_thin):
-        cell.font = font
-        if fill:
-            cell.fill = fill
-        cell.alignment = align
-        cell.border = border
-
-    def set_cell(ws, row, col, value, font=body_font, fill=None, align=center_align, border=border_thin, number_format=None):
-        cell = ws.cell(row=row, column=col, value=value)
-        apply_style(cell, font, fill, align, border)
-        if number_format:
-            cell.number_format = number_format
-        return cell
-
-    # =========================================================
-    # SHEET 1: Cutting Plan
-    # =========================================================
-    ws1 = wb.active
-    ws1.title = "Cutting Plan"
-
-    # Page setup
-    ws1.page_setup.orientation = 'landscape'
-    ws1.page_setup.fitToWidth = 1
-    ws1.page_setup.fitToHeight = 1
-    ws1.page_margins.left = inch_to_EMU(0.5)
-    ws1.page_margins.right = inch_to_EMU(0.5)
-    ws1.page_margins.top = inch_to_EMU(0.5)
-    ws1.page_margins.bottom = inch_to_EMU(0.5)
-
-    current_row = 1
-
-    # Title band (merged across columns)
-    ws1.merge_cells('A1:J1')
-    set_cell(ws1, 1, 1, f"{title}", title_font, title_fill, Alignment(horizontal='left', vertical='center'))
-    ws1.row_dimensions[1].height = 30
-
-    ws1.merge_cells('A2:J2')
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-    set_cell(ws1, 2, 1, f"Version {version}  |  {now_str}", subtitle_font, title_fill, Alignment(horizontal='right', vertical='center'))
-    ws1.row_dimensions[2].height = 20
-
-    current_row = 4
-
-    # Formula line
-    selected = report_data['selected_combination']
-    rank = selected.get('rank', 1)
-    true_N = report_data['true_N']
-    is_best = selected.get('is_best', rank == 1)
-
-    rank_text = f"Formula F{rank} of {true_N:,}"
-    if is_best:
-        rank_text += "  BEST COMBINATION"
-    else:
-        best_combo = next((c for c in report_data.get('all_combinations', []) if c.get('is_best')), None)
-        if best_combo:
-            rank_text += f"  (Best is Formula F1, scrap {best_combo.get('scrap_mm', 0):.1f} mm)"
-
-    num_coils = report_data['coil_params']['num_coils']
-    if num_coils > 1:
-        rank_text += f"  |  Same plan applies to each of {num_coils} coils"
-
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
-    cell = ws1.cell(row=current_row, column=1, value=rank_text)
-    cell.font = Font(name='Calibri', size=11, bold=True, color='000000')
-    cell.alignment = Alignment(horizontal='left', vertical='center')
-    current_row += 2
-
-    # Two blocks side by side: Input Parameters (A-F) | Summary (G-J)
-    coil_params = report_data['coil_params']
-
-    # Input Parameters section
-    current_row += 1
-    set_cell(ws1, current_row, 1, "Input Parameters", section_header_font, section_header_fill, left_align)
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=6)
-    for c in range(1, 7):
-        apply_style(ws1.cell(row=current_row, column=c), fill=section_header_fill)
-    current_row += 1
-
-    # Coil info rows
-    input_rows = [
-        ("Number of coils", num_coils),
-        ("Coil width (mm)", coil_params['coil_width']),
-        ("Scrap range (mm)", f"{coil_params['min_scrap']:.0f} to {coil_params['max_scrap']:.0f}"),
-        ("Every size at least once", "Yes" if coil_params['at_least_once'] else "No"),
-    ]
-
-    for label, value in input_rows:
-        set_cell(ws1, current_row, 1, label, body_font, None, left_align)
-        ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
-        set_cell(ws1, current_row, 4, value, body_font, None, center_align)
-        ws1.merge_cells(start_row=current_row, start_column=4, end_row=current_row, end_column=6)
-        current_row += 1
-
-    # Strip sizes will be added as full-width row below both sections (after summary section)
-    strip_sizes = coil_params['strip_sizes']
-
-    # Coil weights
-    coil_weights = selected.get('coil_weights', [])
-    if not coil_weights:
-        total_weight = selected.get('total_coil_weight', 10000.0)
-        coil_weights = [total_weight / num_coils] * num_coils
-
-    if num_coils <= 12:
-        for i, w in enumerate(coil_weights):
-            set_cell(ws1, current_row, 1, f"Coil {i+1} weight (kg)", body_font, None, left_align)
-            ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
-            cell = set_cell(ws1, current_row, 4, w, body_font, None, center_align, number_format='#,##0.00')
-            ws1.merge_cells(start_row=current_row, start_column=4, end_row=current_row, end_column=6)
-            current_row += 1
-    else:
-        for i in range(12):
-            set_cell(ws1, current_row, 1, f"Coil {i+1} weight (kg)", body_font, None, left_align)
-            ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
-            cell = set_cell(ws1, current_row, 4, coil_weights[i], body_font, None, center_align, number_format='#,##0.00')
-            ws1.merge_cells(start_row=current_row, start_column=4, end_row=current_row, end_column=6)
-            current_row += 1
-        set_cell(ws1, current_row, 1, f"+ {num_coils - 12} more coils", body_font, None, left_align)
-        ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=6)
-        current_row += 1
-
-    # Summary section (columns G-J, starting at row 5)
-    summary_start_row = 5
-    current_row_s = summary_start_row
-
-    set_cell(ws1, current_row_s, 7, "Summary", section_header_font, section_header_fill, left_align)
-    ws1.merge_cells(start_row=current_row_s, start_column=7, end_row=current_row_s, end_column=10)
-    for c in range(7, 11):
-        apply_style(ws1.cell(row=current_row_s, column=c), fill=section_header_fill)
-    current_row_s += 1
-
-    total_width = selected.get('total_width', 0.0)
-    scrap_mm = selected.get('scrap_mm', 0.0)
-    scrap_pct = selected.get('scrap_pct', 0.0)
-    total_strips = selected.get('total_strips', 0)
-    total_weight = selected.get('total_coil_weight', 10000.0)
-
-    avg_weight_per_coil = total_weight / num_coils if num_coils > 0 else 0
-    scrap_weight_per_coil = avg_weight_per_coil * (scrap_mm / coil_params['coil_width']) if coil_params['coil_width'] > 0 else 0
-    scrap_weight_total = scrap_weight_per_coil * num_coils
-
-    summary_rows = [
-        ("Used width (mm)", total_width, '#,##0'),
-        ("Scrap width (mm)", scrap_mm, '#,##0'),
-        ("Scrap (%)", scrap_pct / 100, '0.00%'),
-        ("Strips per coil", total_strips, '#,##0'),
-    ]
-
-    if num_coils > 1:
-        summary_rows.append(("Total strips (all coils)", total_strips * num_coils, '#,##0'))
-        summary_rows.append(("Avg weight/coil (kg)", avg_weight_per_coil, '#,##0.00'))
-
-    summary_rows.extend([
-        ("Scrap weight/coil (kg)", scrap_weight_per_coil, '#,##0.00'),
-        ("Scrap weight total (kg)", scrap_weight_total, '#,##0.00'),
-        ("Total weight (kg)", total_weight, '#,##0.00'),
-    ])
-
-    for label, value, fmt in summary_rows:
-        set_cell(ws1, current_row_s, 7, label, body_font, None, left_align)
-        ws1.merge_cells(start_row=current_row_s, start_column=7, end_row=current_row_s, end_column=8)
-        cell = set_cell(ws1, current_row_s, 9, value, body_font, None, center_align, number_format=fmt)
-        ws1.merge_cells(start_row=current_row_s, start_column=9, end_row=current_row_s, end_column=10)
-        current_row_s += 1
-
-    # After both sections, add strip sizes as full-width row (below both blocks)
-    current_row = max(current_row, current_row_s) + 1  # 8mm gutter equivalent
-    if strip_sizes:
-        set_cell(ws1, current_row, 1, "Strip sizes", body_font, None, left_align)
-        ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
-
-        for i, size in enumerate(strip_sizes):
-            color = REPORT_COLORS[f'strip_{i}'] if i < 7 else '#000000'
-            col = 4 + i
-            cell = ws1.cell(row=current_row, column=col, value=f"{int(size)}mm")
-            apply_style(cell, Font(name='Calibri', size=9, bold=True, color='FFFFFF'),
-                       PatternFill(start_color=_hex(color), end_color=_hex(color), fill_type='solid'),
-                       center_align)
-        current_row += 1
-
-    # Cutting plan drawing - create as PNG and embed (16mm height = ~45px at 96 DPI)
-    drawing_img = _create_cutting_drawing_png(report_data, 800, 45)
-    if drawing_img:
-        img = XLImage(drawing_img)
-        img.width = 800
-        img.height = 45
-        ws1.add_image(img, f'A{current_row}')
-        current_row += 6
-
-    # Ruler with knife positions
-    current_row += 1
-    set_cell(ws1, current_row, 1, "Knife positions (mm):", bold_font, None, left_align)
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
-    current_row += 1
-
-    knife_positions = report_data['knife_positions']
-    coil_width = coil_params['coil_width']
-
-    # Create ruler row
-    ruler_text = "0"
-    for kp in knife_positions:
-        pos = kp['position']
-        if pos <= coil_width:
-            ruler_text += f"  |  {int(pos)}"
-    ruler_text += f"  |  Coil edge: {int(coil_width)} mm"
-
-    set_cell(ws1, current_row, 1, ruler_text, Font(name='Consolas', size=8, color='000000'), None, left_align)
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
-    current_row += 2
-
-    # Strip legend table
-    set_cell(ws1, current_row, 1, "Strip Legend", section_header_font, section_header_fill, left_align)
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=7)
-    for c in range(1, 8):
-        apply_style(ws1.cell(row=current_row, column=c), fill=section_header_fill, border=header_border)
-    current_row += 1
-
-    legend_headers = ["Color", "Size (mm)", "Qty/coil", "Total qty", "Width used (mm)", "Weight/strip (kg)", "Total weight (kg)"]
-    for i, h in enumerate(legend_headers):
-        set_cell(ws1, current_row, i+1, h, bold_font, section_header_fill, center_align, header_border)
-    current_row += 1
-
-    strip_data = report_data['strip_data']
-    total_width_sum = 0
-    total_weight_sum = 0
-    total_qty_sum = 0
-
-    for idx, strip in enumerate(strip_data):
-        is_scrap = strip.get('is_scrap', False)
-        size = strip['size']
-        qty = strip['qty_per_coil']
-        color = strip['color']
-
-        width_used = size * qty
-        total_width_sum += width_used
-
-        # Get weight from details
-        weight_one = 0
-        weight_total = 0
-        details = selected.get('details', {})
-        if isinstance(details, dict) and details.get('details'):
-            for d in details['details']:
-                if d['size'] == size and not is_scrap:
-                    weight_one = d['weight_one']
-                    weight_total = d['weight_total']
-                    break
-
-        total_weight_sum += weight_total
-        total_qty_sum += qty * num_coils
-
-        # Color cell - empty text with solid background fill
-        cell = set_cell(ws1, current_row, 1, "", Font(name='Calibri', size=12, color='FFFFFF'),
-                       PatternFill(start_color=_hex(color), end_color=_hex(color), fill_type='solid'), center_align)
-
-        set_cell(ws1, current_row, 2, int(size) if not is_scrap else f"Scrap {int(size)}", body_font, None, center_align)
-        set_cell(ws1, current_row, 3, qty if not is_scrap else "—", body_font, None, center_align)
-        set_cell(ws1, current_row, 4, qty * num_coils if not is_scrap else "—", body_font, None, center_align)
-        set_cell(ws1, current_row, 5, f"{width_used:.0f}" if not is_scrap else f"{size:.0f}", body_font, None, center_align, number_format='#,##0')
-        set_cell(ws1, current_row, 6, f"{weight_one:.2f}" if not is_scrap else "—", body_font, None, center_align, number_format='#,##0.00')
-        set_cell(ws1, current_row, 7, f"{weight_total:.2f}" if not is_scrap else "—", body_font, None, center_align, number_format='#,##0.00')
-
-        # Zebra striping
-        if idx % 2 == 1:
-            for c in range(1, 8):
-                ws1.cell(row=current_row, column=c).fill = zebra_fill
-
-        current_row += 1
-
-    # Scrap row if exists
-    scrap_strips = [s for s in strip_data if s.get('is_scrap')]
-    if scrap_strips:
-        scrap = scrap_strips[0]
-        scrap_weight_per_coil = (scrap['size'] / coil_params['coil_width']) * (total_weight / num_coils) if num_coils > 0 else 0
-        scrap_weight_total = scrap_weight_per_coil * num_coils
-
-        cell = set_cell(ws1, current_row, 1, "", Font(name='Calibri', size=12, color='FFFFFF'),
-                       PatternFill(start_color=_hex(scrap['color']), end_color=_hex(scrap['color']), fill_type='solid'), center_align)
-
-        set_cell(ws1, current_row, 2, f"Scrap {int(scrap['size'])}", bold_font, None, center_align)
-        set_cell(ws1, current_row, 3, "—", body_font, None, center_align)
-        set_cell(ws1, current_row, 4, "—", body_font, None, center_align)
-        set_cell(ws1, current_row, 5, f"{int(scrap['size'])}", bold_font, None, center_align, number_format='#,##0')
-        set_cell(ws1, current_row, 6, f"{scrap_weight_per_coil:.2f}", bold_font, None, center_align, number_format='#,##0.00')
-        set_cell(ws1, current_row, 7, f"{scrap_weight_total:.2f}", bold_font, None, center_align, number_format='#,##0.00')
-        current_row += 1
-
-    # Total row
-    set_cell(ws1, current_row, 1, "", body_font, section_header_fill, center_align, header_border)
-    set_cell(ws1, current_row, 2, "TOTAL", bold_font, section_header_fill, center_align, header_border)
-    set_cell(ws1, current_row, 3, "", body_font, section_header_fill, center_align, header_border)
-    set_cell(ws1, current_row, 4, total_qty_sum, bold_font, section_header_fill, center_align, header_border, number_format='#,##0')
-    set_cell(ws1, current_row, 5, f"{total_width_sum:.0f}", bold_font, section_header_fill, center_align, header_border, number_format='#,##0')
-    set_cell(ws1, current_row, 6, "", body_font, section_header_fill, center_align, header_border)
-    set_cell(ws1, current_row, 7, f"{total_weight_sum:.2f}", bold_font, section_header_fill, center_align, header_border, number_format='#,##0.00')
-    current_row += 2
-
-    # Knife setup table
-    set_cell(ws1, current_row, 1, "Knife Setup", section_header_font, section_header_fill, left_align)
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
-    for c in range(1, 4):
-        apply_style(ws1.cell(row=current_row, column=c), fill=section_header_fill, border=header_border)
-    current_row += 1
-
-    for h in ["Knife #", "Position (mm)", "Action"]:
-        set_cell(ws1, current_row, ["Knife #", "Position (mm)", "Action"].index(h) + 1, h, bold_font, section_header_fill, center_align, header_border)
-    current_row += 1
-
-    for i, kp in enumerate(knife_positions):
-        set_cell(ws1, current_row, 1, i+1, body_font, None, center_align, border_thin)
-        set_cell(ws1, current_row, 2, int(kp['position']), body_font, None, center_align, border_thin, number_format='#,##0')
-        set_cell(ws1, current_row, 3, kp['action'], body_font, None, center_align, border_thin)
-        current_row += 1
-
-    set_cell(ws1, current_row, 1, f"Coil edge: {int(coil_width)} mm", bold_font, None, left_align)
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=3)
-    current_row += 2
-
-    # Weight verification - match PDF format
-    wv = report_data['weight_verification']
-    diff = wv.get('difference', 0)
-    passes = wv.get('passes', False)
-    strips_total = wv.get('strips_total_weight', 0)
-    scrap_total = wv.get('scrap_weight_total', 0)
-    total_w = wv.get('total_coil_weight', 0)
-
-    # Use the actual printed numbers for verification
-    printed_total = strips_total + scrap_total
-    diff_display = printed_total - total_w
-    passes_display = abs(diff_display) <= 0.01
-
-    wv_text = f"Weight verification: Sum(Total weight column) + Scrap weight total = {printed_total:.2f} + {scrap_total:.2f} = {printed_total + scrap_total:.2f} kg vs Total coils weight {total_w:.2f} kg → Difference = {diff_display:.2f} kg - {'PASS' if passes_display else 'FAIL'}"
-    if not passes_display:
-        wv_text += f" (printed: {printed_total:.2f} + {scrap_total:.2f} = {printed_total + scrap_total:.2f}, expected: {total_w:.2f})"
-    wv_color = '1e7a24' if passes_display else 'dc2626'
-    set_cell(ws1, current_row, 1, wv_text, Font(name='Calibri', size=9, bold=True, color=wv_color), None, left_align)
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
-    current_row += 2
-
-    # Hand-writing line
-    set_cell(ws1, current_row, 1, "Job / order no: ____________  Prepared by: ____________  Operator: ____________  Date: ____________",
-            Font(name='Calibri', size=9, color='000000'), None, left_align)
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
-    current_row += 2
-
-    # Footer - only "Developed by Abdalhamed | Coil Slitting Optimizer v3.7.1" (build ID in PDF metadata only)
-    footer_text = f"Developed by Abdalhamed | Coil Slitting Optimizer v{version}"
-    set_cell(ws1, current_row, 1, footer_text, Font(name='Calibri', size=7, color='808080'), None, Alignment(horizontal='center'))
-    ws1.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=10)
-
-    # Column widths for Cutting Plan sheet
-    ws1.column_dimensions['A'].width = 22
-    ws1.column_dimensions['B'].width = 14
-    ws1.column_dimensions['C'].width = 14
-    ws1.column_dimensions['D'].width = 14
-    ws1.column_dimensions['E'].width = 14
-    ws1.column_dimensions['F'].width = 14
-    ws1.column_dimensions['G'].width = 22
-    ws1.column_dimensions['H'].width = 14
-    ws1.column_dimensions['I'].width = 14
-    ws1.column_dimensions['J'].width = 14
-
-    # =========================================================
-    # SHEET 2: Combinations
-    # =========================================================
-    ws2 = wb.create_sheet("Combinations")
-
-    ws2.page_setup.orientation = 'landscape'
-    ws2.page_setup.fitToWidth = 1
-    ws2.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
-    ws2.page_margins.left = inch_to_EMU(0.5)
-    ws2.page_margins.right = inch_to_EMU(0.5)
-    ws2.page_margins.top = inch_to_EMU(0.5)
-    ws2.page_margins.bottom = inch_to_EMU(0.5)
-
-    # Title
-    ws2.merge_cells('A1:Z1')
-    set_cell(ws2, 1, 1, f"{title} - All Combinations", title_font, title_fill, Alignment(horizontal='left', vertical='center'))
-    ws2.row_dimensions[1].height = 30
-
-    ws2.merge_cells('A2:Z2')
-    set_cell(ws2, 2, 1, f"Version {version}  |  {now_str}", subtitle_font, title_fill, Alignment(horizontal='right', vertical='center'))
-    ws2.row_dimensions[2].height = 20
-
-    current_row = 4
-
-    # Note if capped
-    combos = report_data.get('all_combinations', [])
-    if not combos:
-        combos = report_data.get('filtered_combinations', [])
-
-    combos = sorted(combos, key=lambda x: (x.get('scrap_mm', 9999), x.get('total_strips', 9999)))
-    # No cap - show all combinations
-    set_cell(ws2, current_row, 1, f"Showing all {len(combos):,} combinations",
-            Font(name='Calibri', size=10, italic=True, color='dc2626'), None, left_align)
-    ws2.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=20)
-    current_row += 1
-
-    # Headers
-    num_sizes = len(strip_sizes)
-    headers = ["Formula"]
-    for i, size in enumerate(strip_sizes):
-        headers.append(f"Qty {int(size)}mm")
-    headers.extend(["Total width (mm)", "Scrap (mm)", "Scrap (%)", "Total strips"])
-
-    for i, h in enumerate(headers):
-        set_cell(ws2, current_row, i+1, h, bold_font, section_header_fill, center_align, header_border)
-    header_row = current_row
-    current_row += 1
-
-    # Data rows
-    for idx, combo in enumerate(combos):
-        is_best = combo.get('is_best', False)
-        is_selected = combo == selected
-        row_rank = combo.get('rank', idx + 1)
-
-        rank_text = "F%d" % row_rank
-        if is_selected:
-            rank_text += " Selected"
-
-        cell = set_cell(ws2, current_row, 1, rank_text, bold_font if is_best else body_font,
-                       best_fill if is_best else (zebra_fill if idx % 2 == 1 else None), center_align, border_thin)
-
-        qs = combo.get('qs', [])
-        for j, qty in enumerate(qs):
-            set_cell(ws2, current_row, 2+j, qty, bold_font if is_best else body_font,
-                    best_fill if is_best else (zebra_fill if idx % 2 == 1 else None), center_align, border_thin)
-
-        set_cell(ws2, current_row, 2+num_sizes, combo.get('total_width', 0), bold_font if is_best else body_font,
-                best_fill if is_best else (zebra_fill if idx % 2 == 1 else None), center_align, border_thin, number_format='#,##0')
-        set_cell(ws2, current_row, 3+num_sizes, combo.get('scrap_mm', 0), bold_font if is_best else body_font,
-                best_fill if is_best else (zebra_fill if idx % 2 == 1 else None), center_align, border_thin, number_format='#,##0')
-        set_cell(ws2, current_row, 4+num_sizes, combo.get('scrap_pct', 0) / 100, bold_font if is_best else body_font,
-                best_fill if is_best else (zebra_fill if idx % 2 == 1 else None), center_align, border_thin, number_format='0.00%')
-        set_cell(ws2, current_row, 5+num_sizes, combo.get('total_strips', 0), bold_font if is_best else body_font,
-                best_fill if is_best else (zebra_fill if idx % 2 == 1 else None), center_align, border_thin, number_format='#,##0')
-
-        current_row += 1
-
-    # Freeze panes below header
-    ws2.freeze_panes = f'A{header_row + 1}'
-
-    # Auto-filter
-    ws2.auto_filter.ref = f"A{header_row}:{get_column_letter(len(headers))}{current_row - 1}"
-
-    # 2-color scale on Scrap % column (column 4+num_sizes) - only if we have data rows
-    if current_row > header_row + 1:
-        scrap_pct_col = get_column_letter(4 + num_sizes)
-        from openpyxl.formatting.rule import ColorScaleRule
-        ws2.conditional_formatting.add(
-            f"{scrap_pct_col}{header_row + 1}:{scrap_pct_col}{current_row - 1}",
-            ColorScaleRule(
-                start_type='min', start_color='C6EFCE',  # Light green
-                end_type='max', end_color='FFC7CE'       # Light orange/red
-            )
-        )
-
-    # Column widths
-    ws2.column_dimensions['A'].width = 12
-    for i in range(num_sizes):
-        ws2.column_dimensions[get_column_letter(i+2)].width = 14
-    for i, w in enumerate([16, 12, 12, 12]):
-        ws2.column_dimensions[get_column_letter(2 + num_sizes + i)].width = w
-
-    # =========================================================
-    # SHEET 3: Info
-    # =========================================================
-    ws3 = wb.create_sheet("Info")
-
-    ws3.page_setup.orientation = 'landscape'
-    ws3.page_margins.left = inch_to_EMU(0.5)
-    ws3.page_margins.right = inch_to_EMU(0.5)
-    ws3.page_margins.top = inch_to_EMU(0.5)
-    ws3.page_margins.bottom = inch_to_EMU(0.5)
-
-    current_row = 1
-    set_cell(ws3, current_row, 1, "Calculation Parameters", section_header_font, section_header_fill, left_align)
-    ws3.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=2)
-    for c in range(1, 3):
-        apply_style(ws3.cell(row=current_row, column=c), fill=section_header_fill, border=header_border)
-    current_row += 1
-
-    params = [
-        ("Coil Width (mm)", coil_params['coil_width']),
-        ("Number of Coils", num_coils),
-        ("Strip Sizes (mm)", ", ".join(str(int(s)) for s in strip_sizes)),
-        ("Scrap Range (mm)", f"{coil_params['min_scrap']:.0f} to {coil_params['max_scrap']:.0f}"),
-        ("Every Size at Least Once", "Yes" if coil_params['at_least_once'] else "No"),
-        ("Total Combinations Found", true_N),
-        ("Selected Combination Rank", rank),
-        ("Selected Quantities", ", ".join(str(q) for q in selected.get('qs', []))),
-        ("Selected Total Width (mm)", selected.get('total_width', 0)),
-        ("Selected Scrap (mm)", selected.get('scrap_mm', 0)),
-        ("Selected Scrap (%)", selected.get('scrap_pct', 0) / 100),
-        ("Total Strips per Coil", selected.get('total_strips', 0)),
-    ]
-
-    for label, value in params:
-        set_cell(ws3, current_row, 1, label, body_font, None, left_align)
-        set_cell(ws3, current_row, 2, value, body_font, None, center_align,
-                number_format='0.00%' if isinstance(value, float) and 'Scrap (%)' in label else ('#,##0.00' if isinstance(value, float) else None))
-        current_row += 1
-
-    current_row += 1
-    set_cell(ws3, current_row, 1, "Weight Verification", section_header_font, section_header_fill, left_align)
-    ws3.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=2)
-    for c in range(1, 3):
-        apply_style(ws3.cell(row=current_row, column=c), fill=section_header_fill, border=header_border)
-    current_row += 1
-
-    wv_data = [
-        ("Total Coil Weight (kg)", total_weight, '#,##0.00'),
-        ("Average Coil Weight (kg)", avg_weight_per_coil, '#,##0.00'),
-        ("Total Strips Weight (kg)", total_weight_sum, '#,##0.00'),
-        ("Scrap Weight per Coil (kg)", scrap_weight_per_coil, '#,##0.00'),
-        ("Scrap Weight Total (kg)", scrap_weight_total, '#,##0.00'),
-        ("Weight Difference (kg)", diff_display, '0.00'),
-        ("Weight Check", "PASS" if passes_display else "FAIL", ''),
-    ]
-
-    for item in wv_data:
-        label = item[0]
-        value = item[1]
-        fmt = item[2] if len(item) > 2 else None
-        set_cell(ws3, current_row, 1, label, body_font, None, left_align)
-        font = Font(name='Calibri', size=9, bold=True, color='1e7a24' if label == 'Weight Check' and passes_display else ('dc2626' if label == 'Weight Check' else '000000'))
-        set_cell(ws3, current_row, 2, value, font, None, center_align,
-                number_format=fmt if fmt != '0.00' else '0.00')
-        current_row += 1
-
-    current_row += 1
-    set_cell(ws3, current_row, 1, "Generated", section_header_font, section_header_fill, left_align)
-    ws3.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=2)
-    for c in range(1, 3):
-        apply_style(ws3.cell(row=current_row, column=c), fill=section_header_fill, border=header_border)
-    current_row += 1
-
-    gen_data = [
-        ("Date/Time", now_str),
-        ("App Version", version),
-        ("Build ID", report_data['build_id']),
-    ]
-
-    for label, value in gen_data:
-        set_cell(ws3, current_row, 1, label, body_font, None, left_align)
-        set_cell(ws3, current_row, 2, value, body_font, None, center_align)
-        current_row += 1
-
-    ws3.column_dimensions['A'].width = 35
-    ws3.column_dimensions['B'].width = 25
-
-    # Save
-    wb.save(filepath)
-    return True
 
 
 def _create_cutting_drawing_png(report_data: Dict[str, Any], width: int, height: int):

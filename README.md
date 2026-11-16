@@ -14,7 +14,7 @@ Slitra helps steel service centers and slitting operations calculate the optimal
 
 ### Core Calculation
 - **Exhaustive combination search** — finds all valid slitting patterns for given constraints
-- **Bounded search (STEP 2B)** — when combinations exceed 1,000,000, returns the lowest-scrap 1M with clear notification
+- **Bounded search** — when combinations exceed 1,000,000, returns the lowest-scrap 1M with clear notification
 - **Coil weight & strip size independence** — changing coil count no longer affects strip fields (and vice versa)
 - **Configurable scrap limits** — min/max scrap (mm), at-least-once constraint per size
 
@@ -49,7 +49,7 @@ Slitra helps steel service centers and slitting operations calculate the optimal
 ## Architecture
 
 ```
-src/slitra/
+src/
 ├── __init__.py          # Package entry point
 ├── app_info.py          # Version, factory name, constants, feature flags
 ├── core.py              # Calculation engine (find_all_combinations, bounded search)
