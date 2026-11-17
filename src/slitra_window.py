@@ -38,7 +38,7 @@ from array import array
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # ---------------------------------------------------------------- import app info
-from app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES
+from app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES, DEFAULT_AT_LEAST_ONCE
 from reports import REPORT_COLORS
 
 from slitra_db import SlitraDBError
@@ -425,7 +425,7 @@ class ResultsModel(QAbstractTableModel):
             return None
         text = labels[section]
         if self.sort_col == section:
-            text += " " + ("\\u25BC" if self.sort_desc else "\\u25B2")
+            text += " " + ("▼" if self.sort_desc else "▲")
         return text
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
@@ -830,7 +830,7 @@ class ResultsHistory:
 
 
 # ---------------------------------------------------------------- import app info
-from app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES
+from app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES, DEFAULT_AT_LEAST_ONCE
 
 
 # ---------------------------------------------------------------- small painted widgets
@@ -2039,7 +2039,7 @@ class InputPanel(QFrame):
             self.sizes_box.setCurrentIndex(0)
             for ed in self.size_edits + [self.width_edit, self.smin_edit, self.smax_edit]:
                 ed.clear()
-            self.every.setChecked(False)
+            self.every.setChecked(DEFAULT_AT_LEAST_ONCE)
             self.refresh()
             self._update_fit()
             # Reset new fields
@@ -2797,6 +2797,8 @@ class JobOrdersDialog(QDialog):
     """Dialog for browsing past job orders.
     Follows skeleton design language: SectionTitle header, ResultsView-style table with SwatchDelegate."""
 
+    load_job_requested = Signal(dict)  # emits the full job dict
+
     def __init__(self, jobs, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Job Orders")
@@ -2842,6 +2844,13 @@ class JobOrdersDialog(QDialog):
         hh.resizeSection(5, 90)
 
         self.table.verticalHeader().setDefaultSectionSize(28)
+
+        # Select first row by default (if there are jobs)
+        if len(jobs) > 0:
+            self.table.setCurrentCell(0, 0)
+
+        # Store jobs for double-click/load access
+        self._jobs = jobs
 
         # Status badge colors
         STATUS_COLORS = {
@@ -2906,11 +2915,10 @@ class JobOrdersDialog(QDialog):
             formula_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             self.table.setItem(row, 4, formula_item)
 
-            # Total kg
+            # Total kg — sum of coil weights
             total_kg = 0.0
-            if job.get("plan"):
-                for s in job["plan"]:
-                    total_kg += s.get("kg", 0)
+            for c in job.get("coils") or []:
+                total_kg += c.get("kg", 0)
             total_item = QTableWidgetItem("%.3f" % total_kg)
             total_item.setFont(make_font(9, QFont.Weight.DemiBold))
             total_item.setForeground(QColor(INK))
@@ -2919,17 +2927,40 @@ class JobOrdersDialog(QDialog):
 
         outer.addWidget(self.table, 1)
 
-        # Close button
+        # Buttons
         btn_row = QHBoxLayout()
         btn_row.addStretch(1)
+
+        load_btn = QPushButton("Load Job")
+        load_btn.setFixedSize(100, 32)
+        load_btn.setFont(make_font(9, QFont.Weight.Medium))
+        load_btn.setStyleSheet(PRIMARY_QSS)
+        load_btn.setAutoDefault(False)
+        load_btn.clicked.connect(self._on_load_clicked)
+        btn_row.addWidget(load_btn)
+
         close_btn = QPushButton("Close")
         close_btn.setFixedSize(80, 32)
         close_btn.setFont(make_font(9, QFont.Weight.Medium))
-        close_btn.setStyleSheet(PRIMARY_QSS)
+        close_btn.setStyleSheet(OUTLINE_QSS)
         close_btn.setAutoDefault(False)
         close_btn.clicked.connect(self.accept)
         btn_row.addWidget(close_btn)
         outer.addLayout(btn_row)
+
+        # Double-click to load
+        self.table.cellDoubleClicked.connect(self._on_cell_double_clicked)
+
+    def _on_load_clicked(self):
+        """Emit load_job_requested with the selected job."""
+        row = self.table.currentRow()
+        if row >= 0 and row < len(self._jobs):
+            self.load_job_requested.emit(self._jobs[row])
+
+    def _on_cell_double_clicked(self, row, col):
+        """Double-click to load job."""
+        if row < len(self._jobs):
+            self.load_job_requested.emit(self._jobs[row])
 
 
 # ---------------------------------------------------------------- Coil Stock Dashboard
@@ -3510,6 +3541,7 @@ class MainWindow(QMainWindow):
     save_preset_requested = Signal()
     load_preset_requested = Signal()
     show_job_orders_requested = Signal()
+    job_load_requested = Signal(dict)  # emitted when user asks to load a past job
     inventory_requested = Signal()
     params_changed = Signal(dict)  # emits all input parameters
     job_phase_changed = Signal(str)
@@ -3612,6 +3644,7 @@ class MainWindow(QMainWindow):
     def show_job_orders(self, jobs):
         """Show the job orders list dialog."""
         dlg = JobOrdersDialog(jobs, self)
+        dlg.load_job_requested.connect(self.job_load_requested.emit)
         dlg.exec()
 
     def resizeEvent(self, e):

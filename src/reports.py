@@ -1328,7 +1328,7 @@ def _create_strip_legend_table(report_data: Dict[str, Any], width: float):
     scrap_strips = [s for s in strip_data if s.get('is_scrap')]
     if scrap_strips:
         scrap = scrap_strips[0]
-        scrap_weight_per_coil = (scrap['size'] / report_data['coil_params']['coil_width']) * (selected.get('total_coil_weight', 10000) / num_coils) if num_coils > 0 else 0
+        scrap_weight_per_coil = (scrap['size'] / report_data['coil_params']['coil_width']) * (report_data['selected_combination'].get('total_coil_weight', 10000) / num_coils) if num_coils > 0 else 0
         scrap_weight_total = scrap_weight_per_coil * num_coils
 
         scrap_row = [

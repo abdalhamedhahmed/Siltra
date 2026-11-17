@@ -81,14 +81,4 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
-print()
-print('Testing export_excel...')
-try:
-    app.export_excel()
-    print("Excel export completed successfully!")
-except Exception as e:
-    print(f'Error: {e}')
-    import traceback
-    traceback.print_exc()
-
 root.destroy()

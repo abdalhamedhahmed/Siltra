@@ -7,6 +7,16 @@ APP_NAME = "Slitra"
 APP_VERSION = "4.1.1"
 FACTORY_NAME = "ZAT AL-EMAD FACTORY"
 
+# Developer / publisher info
+DEVELOPER_NAME = "Abdalhamed H. Ahmed"
+DEVELOPER_URL = "https://github.com/abdalhamedhahmed/Siltra"
+COPYRIGHT_YEAR = "2026"
+COPYRIGHT_HOLDER = "Abdalhamed H. Ahmed"
+
+# Auto-update check
+UPDATE_CHECK_URL = "https://raw.githubusercontent.com/abdalhamedhahmed/Siltra/main/latest_version.txt"
+UPDATE_CHECK_INTERVAL_HOURS = 24
+
 # Calculation parameters
 DEFAULT_MIN_SCRAP = 0
 DEFAULT_MAX_SCRAP = 30
@@ -31,5 +41,5 @@ PRESET_COMPATIBILITY = True
 MAX_COILS = 100000
 
 # History settings
-HISTORY_KEEP = 5
-HISTORY_MAX_BYTES = 700 * 1024 * 1024
+HISTORY_KEEP = 20
+HISTORY_MAX_BYTES = 1024 * 1024 * 1024

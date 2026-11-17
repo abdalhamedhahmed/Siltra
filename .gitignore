@@ -1,0 +1,14 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build artifacts
+*.pdf
+*.iss
+
+# Local development files
+backups/
+skeleton_screenshots/
+template/
+make_template_db.py

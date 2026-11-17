@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from core import find_all_combinations_bounded, calculate_combination_details
-from reports import build_report_data, export_pdf, export_excel
+from reports import build_report_data, export_pdf
 
 def test_case(name, coil_width, strip_sizes, min_scrap, max_scrap, at_least_once, num_coils, total_coil_weight):
     print(f"\n{'='*60}")
@@ -67,13 +67,6 @@ def test_case(name, coil_width, strip_sizes, min_scrap, max_scrap, at_least_once
         print(f"PDF export: {success}")
         if success and os.path.exists(pdf_file):
             print(f"  PDF size: {os.path.getsize(pdf_file)} bytes")
-
-        # Export Excel
-        xlsx_file = f"test_{name.replace(' ', '_')}.xlsx"
-        success = export_excel(report_data, xlsx_file, version='3.7.1')
-        print(f"Excel export: {success}")
-        if success and os.path.exists(xlsx_file):
-            print(f"  Excel size: {os.path.getsize(xlsx_file)} bytes")
 
         return True
 

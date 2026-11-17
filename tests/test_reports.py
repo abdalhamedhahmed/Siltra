@@ -42,11 +42,8 @@ settings = {
     'total_coil_weight': 10000,
 }
 
-from reports import build_report_data, export_pdf, export_excel
+from reports import build_report_data, export_pdf
 report_data = build_report_data(result, 0, settings)
 
 success = export_pdf(report_data, 'test_CASE_M_final.pdf', version='3.7.1')
 print(f'PDF export: {success}')
-
-success = export_excel(report_data, 'test_CASE_M_final.xlsx', version='3.7.1')
-print(f'Excel export: {success}')

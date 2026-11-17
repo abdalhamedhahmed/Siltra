@@ -11,7 +11,7 @@ Architecture:
 - slitra_window.py: Pure UI, emits signals (calculate_requested, params_changed, etc.)
 - slitra_controller.py: All logic, connects to window signals, builds view models
 - coil_slitting_calc.py: Core calculation engine (find_all_combinations, etc.)
-- reports.py: PDF/Excel export (build_report_data, export_pdf, export_excel)
+- reports.py: PDF export (build_report_data, export_pdf)
 - app_info.py: Application metadata
 """
 
@@ -20,6 +20,7 @@ import os
 import json
 import threading
 import time
+from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -104,9 +105,6 @@ class CalculationWorker(QObject):
 
     def cancel(self):
         self.cancel_flag.set()
-        # When cancelling, we still need to emit finished so the UI can recover
-        # The results will be whatever was computed before cancellation
-        # stopped_early will be True if cancelled mid-search
 
 
 class SlitraController(QObject):
@@ -125,6 +123,7 @@ class SlitraController(QObject):
         self.calc_thread = None
         self.calc_worker = None
         self.is_calculating = False
+        self.last_stopped_early = False
         self.memory = MemoryStore()
 
         # Database - Phase E: Job Order persistence
@@ -233,6 +232,7 @@ class SlitraController(QObject):
 
         # Job Orders signal
         self.window.show_job_orders_requested.connect(self.on_show_job_orders)
+        self.window.job_load_requested.connect(self.on_job_load_requested)
         self.window.inventory_requested.connect(self.on_show_inventory)
 
     # ============================================================
@@ -318,6 +318,42 @@ class SlitraController(QObject):
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(self.window, "Error", f"Failed to load job orders: {e}")
 
+    @Slot(dict)
+    def on_job_load_requested(self, job: dict):
+        """Load a past job's parameters into the input panel."""
+        try:
+            plan = job.get("plan", {})
+            if not plan:
+                from PySide6.QtWidgets import QMessageBox
+                QMessageBox.warning(self.window, "Cannot Load", "This job has no saved plan data.")
+                return
+
+            # The plan dict contains all input parameters saved when the job was created
+            cfg = {
+                "weights": [c.get("kg", 0) for c in job.get("coils", [])],
+                "width": plan.get("width", 0),
+                "sizes": plan.get("sizes", []),
+                "smin": plan.get("min_scrap", 0),
+                "smax": plan.get("max_scrap", 30),
+                "every": plan.get("at_least_once", True),
+                "consignment": "",  # Will extract from coils
+                "material_type": plan.get("material_type", "HR"),
+                "thickness": plan.get("thickness", 0.5),
+            }
+
+            # Extract consignment from first coil
+            if job.get("coils"):
+                coil_code = job["coils"][0].get("code", "")
+                if coil_code and "-" in coil_code:
+                    cfg["consignment"] = coil_code.rsplit("-", 1)[0]
+
+            # Load into input panel
+            self.window.left.set_state(cfg)
+            self.window.set_status(f"Loaded job {job['code']} ({job.get('formula', '')})")
+        except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(self.window, "Error", f"Failed to load job: {e}")
+
     @Slot()
     @Slot()
     def on_show_inventory(self):
@@ -375,6 +411,9 @@ class SlitraController(QObject):
         self.calc_thread = None
         self.calc_worker = None
 
+        # Track stopped_early for report data (e.g. 1M-capped notification)
+        self.last_stopped_early = stopped_early
+
         if not results:
             self.window.set_status("No valid combinations found for these parameters")
             self.window.show_empty()
@@ -424,7 +463,12 @@ class SlitraController(QObject):
 
     @Slot()
     def on_export_pdf(self):
-        """Export current results to Job Order PDF with database persistence."""
+        """Export current results to Job Order PDF with database persistence.
+
+        DB persistence (consignment, calculation, job order) happens AFTER the
+        user confirms the save path, so cancelling the file dialog leaves no
+        partial data in the database.
+        """
         if not self.current_vm:
             QMessageBox.warning(self.window, "No Data", "No calculation results to export")
             return
@@ -441,18 +485,40 @@ class SlitraController(QObject):
                 QMessageBox.warning(self.window, "Missing Input", "Consignment name is required for export")
                 return
 
+            # Suggest export filename as the job number (e.g. JO-2026-0001.pdf)
+            # We need a job number for the default filename; generate one tentatively
+            year = datetime.now().year
+            tentative_job_number = f"JO-{year}-0001"
+            try:
+                last = self.db.db.execute(
+                    "SELECT code FROM jobs WHERE code LIKE ? ORDER BY id DESC LIMIT 1",
+                    (f"JO-{year}-%",)
+                ).fetchone()
+                if last:
+                    n = int(last["code"].rsplit("-", 1)[1]) + 1
+                    tentative_job_number = f"JO-{year}-{n:04d}"
+            except Exception:
+                pass
+
+            filepath, _ = QFileDialog.getSaveFileName(
+                self.window, "Export Job Order", f"{tentative_job_number}.pdf", "PDF Files (*.pdf)"
+            )
+            if not filepath:
+                return
+
+            self.window.set_status("Persisting Job Order...")
+            QApplication.processEvents()
+
+            # Now that user confirmed the save path, persist to DB
             # Check if consignment exists in DB; if not, add it
             consignment_id = None
             try:
-                # Check if consignment already exists
                 existing = self.db.db.execute(
                     "SELECT id FROM consignments WHERE name = ?", (consignment,)
                 ).fetchone()
                 if existing:
                     consignment_id = existing["id"]
-                    # Consignment exists - update coils if needed
                 else:
-                    # Create new consignment with coils
                     num_coils = params.get('coils', 1)
                     coil_weights = params.get('weights', [])
                     if not coil_weights:
@@ -481,7 +547,6 @@ class SlitraController(QObject):
                         notes=f"Created from Job Order export"
                     )
             except Exception as db_err:
-                # If consignment creation fails, we still allow export but warn
                 self.window.set_status(f"DB warning: {db_err}")
                 QMessageBox.warning(self.window, "DB Warning", f"Could not persist consignment: {db_err}\nProceeding with PDF export only.")
 
@@ -490,7 +555,7 @@ class SlitraController(QObject):
                 inputs=params,
                 combos=len(self.all_combinations),
                 lowest_scrap_mm=self.all_combinations[0].get('scrap_mm', 0) if self.all_combinations else None,
-                seconds=0,  # Not tracking calculation time currently
+                seconds=0,
                 consignment_id=consignment_id
             )
 
@@ -511,7 +576,6 @@ class SlitraController(QObject):
             # Create job order in database
             coil_kgs = {}
             if consignment_id:
-                # Get coil IDs from the consignment
                 coils = self.db.coils(consignment_id)
                 for i, coil in enumerate(coils[:params.get('coils', 1)]):
                     coil_kgs[coil['id']] = coil['weight_kg']
@@ -528,16 +592,8 @@ class SlitraController(QObject):
             self.window.topbar.set_job(job_number)
             self.window.job_number_changed.emit(job_number)
 
-            # Suggest export filename as the job number (e.g. JO-2026-0001.pdf)
-            filepath, _ = QFileDialog.getSaveFileName(
-                self.window, "Export Job Order", f"{job_number}.pdf", "PDF Files (*.pdf)"
-            )
-            if not filepath:
-                return
-
             # Build report data with job number and order phase
             report_data = self._build_report_data(self.selected_index)
-            # Add job-specific fields to report data
             report_data['job_number'] = job_number
             report_data['order_phase'] = params.get('order_phase', 'Initial Job Order')
             report_data['consignment'] = consignment
@@ -678,14 +734,8 @@ Formula F1 (best combination):
             QMessageBox.warning(self.window, "Missing Input", "Please enter a valid average coil weight")
             return False
 
-        # Phase F: Validate material type and thickness
-        if not params.get('material_type'):
-            QMessageBox.warning(self.window, "Missing Input", "Please select a material type")
-            return False
-
-        if params.get('thickness', 0) <= 0:
-            QMessageBox.warning(self.window, "Missing Input", "Please enter a valid thickness")
-            return False
+        # Phase F: material type and thickness are used for theoretical length only,
+        # not for the slitting calculation itself — do not block calculation on them
 
         weights = params.get('weights', [])
         coils = params.get('coils', 1)
@@ -780,7 +830,7 @@ Formula F1 (best combination):
             'all_combinations': self.all_combinations,
             'filtered_combinations': self.filtered_combinations,
             'total_combinations': len(self.all_combinations),
-            'stopped_early': False,  # we'd need to track this from worker
+            'stopped_early': getattr(self, 'last_stopped_early', False),
         }
 
         # Add the selected combination with all required fields for reports.build_report_data

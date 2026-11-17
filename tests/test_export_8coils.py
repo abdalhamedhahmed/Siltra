@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from core import find_all_combinations_bounded, calculate_combination_details
-from reports import build_report_data, export_pdf, export_excel
+from reports import build_report_data, export_pdf
 
 # Test case: 8 coils, same as user request
 coil_width = 1250
@@ -65,14 +65,5 @@ success = export_pdf(report_data, pdf_file, version='3.7.1')
 print(f'\nPDF export: {success}')
 if success and os.path.exists(pdf_file):
     print(f'  PDF size: {os.path.getsize(pdf_file)} bytes')
-    # os.remove(pdf_file)
-
-# Export Excel
-xlsx_file = r'test_8coils.xlsx'
-success = export_excel(report_data, xlsx_file, version='3.7.1')
-print(f'Excel export: {success}')
-if success and os.path.exists(xlsx_file):
-    print(f'  Excel size: {os.path.getsize(xlsx_file)} bytes')
-    # os.remove(xlsx_file)
 
 print('\nTest completed successfully!')
