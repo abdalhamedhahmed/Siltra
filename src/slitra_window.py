@@ -41,6 +41,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from app_info import APP_NAME, FACTORY_NAME, APP_VERSION as VERSION, MAX_COILS, HISTORY_KEEP, HISTORY_MAX_BYTES
 from reports import REPORT_COLORS
 
+from slitra_db import SlitraDBError
+
 # ---------------------------------------------------------------- colors (fixed hex, light mode only)
 RED = "#D32F2F"
 INK = "#1F2933"
@@ -3479,8 +3481,12 @@ class InventoryWindow(QDialog):
 
         try:
             for c in selected:
-                # Debit the coil by its full remaining weight (whole coil goes out)
-                self.db.add_ledger_entry(c["id"], "job", -c["remaining_kg"], reason)
+                # Use debit() which validates remaining stock and raises StockError on over-withdrawal
+                self.db.debit(c["id"], c["remaining_kg"], note=reason, kind="job")
+        except SlitraDBError as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Database Error", str(e))
+            return
         except Exception as e:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Database Error", str(e))
