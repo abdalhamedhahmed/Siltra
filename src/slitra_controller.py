@@ -233,9 +233,7 @@ class SlitraController(QObject):
 
         # Job Orders signal
         self.window.show_job_orders_requested.connect(self.on_show_job_orders)
-        self.window.show_coil_stock_requested.connect(self.on_show_coil_stock)
-        self.window.add_coils_to_stock_requested.connect(self.on_add_coils_to_stock)
-        self.window.add_coils_to_stock_requested.connect(self.on_add_coils_to_stock)
+        self.window.inventory_requested.connect(self.on_show_inventory)
 
     # ============================================================
     # SIGNAL HANDLERS
@@ -321,27 +319,17 @@ class SlitraController(QObject):
             QMessageBox.critical(self.window, "Error", f"Failed to load job orders: {e}")
 
     @Slot()
-    def on_show_coil_stock(self):
-        """Show the coil stock dashboard."""
-        try:
-            stock = self.db.stock_status()
-            self.window.show_coil_stock(stock)
-        except Exception as e:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self.window, "Error", f"Failed to load coil stock: {e}")
-
     @Slot()
-    def on_add_coils_to_stock(self):
-        """Show the add coils to stock dialog."""
+    def on_show_inventory(self):
+        """Show the Inventory window (Receive / Stock / Withdraw tabs)."""
         try:
-            from slitra_window import AddCoilsToStockDialog
-            dlg = AddCoilsToStockDialog(self.db, self.window)
-            if dlg.exec():
-                self.window.set_status("Coils added to stock")
-                # Refresh coil stock if dashboard is open
+            from slitra_window import InventoryWindow
+            dlg = InventoryWindow(self.db, self.window)
+            dlg.exec()
+            self.window.set_status("Inventory window closed")
         except Exception as e:
             from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self.window, "Error", f"Failed to open add coils dialog: {e}")
+            QMessageBox.critical(self.window, "Error", f"Failed to open Inventory window: {e}")
 
     @Slot(str)
     def on_job_phase_changed(self, phase: str):
@@ -544,7 +532,7 @@ class SlitraController(QObject):
 
             # Update TopBar with the new job number
             self.window.topbar.set_job(job_number)
-            self.job_number_changed.emit(job_number)
+            self.window.job_number_changed.emit(job_number)
 
             # Build report data with job number and order phase
             report_data = self._build_report_data(self.selected_index)
