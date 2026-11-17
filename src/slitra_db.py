@@ -365,6 +365,17 @@ class SlitraDB:
     def remaining(self, coil_id):
         return _r3(self.db.execute("SELECT COALESCE(SUM(kg),0) FROM ledger WHERE coil_id=?", (coil_id,)).fetchone()[0])
 
+    def add_ledger_entry(self, coil_id, kind, kg, note=""):
+        """Record a signed ledger movement for a coil.
+        kind: 'receipt' (+kg), 'withdrawal' (-kg), 'scrap' (-kg), etc.
+        Returns nothing; the stock balance is derived from the ledger sum."""
+        if coil_id is None:
+            raise SlitraDBError("a coil id is required")
+        with self._tx():
+            self.db.execute("INSERT INTO ledger(ts,coil_id,kind,kg,note) VALUES(?,?,?,?,?)",
+                            (_now(), coil_id, kind, _r3(float(kg)), note))
+        self.log("inventory", "ledger %s %s kg on coil %s" % (kind, kg, coil_id), {"coil_id": coil_id, "kind": kind, "kg": kg})
+
     def stock_status(self):
         """Return all coils with remaining stock, grouped by consignment.
         Each entry: code, consignment, thickness_mm, width_mm, weight_kg, remaining_kg, status.
@@ -376,7 +387,7 @@ class SlitraDB:
         ).fetchall()
         out = []
         for r in rows:
-            remaining = _r3(r["weight_kg"] + self.remaining(r["id"]))
+            remaining = self.remaining(r["id"])
             ratio = remaining / r["weight_kg"] if r["weight_kg"] > 0 else 0
             if remaining <= 0.001:
                 status = "empty"
@@ -513,9 +524,9 @@ class SlitraDB:
             raise SlitraDBError("a job needs at least one coil")
         with self._tx():
             year = datetime.now().year
-            last = self.db.execute("SELECT code FROM jobs WHERE code LIKE ? ORDER BY id DESC LIMIT 1", ("J-%d-%%" % year,)).fetchone()
+            last = self.db.execute("SELECT code FROM jobs WHERE code LIKE ? ORDER BY id DESC LIMIT 1", ("JO-%d-%%" % year,)).fetchone()
             n = int(last["code"].rsplit("-", 1)[1]) + 1 if last else 1
-            code = "J-%d-%04d" % (year, n)
+            code = "JO-%d-%04d" % (year, n)
             cur = self.db.execute(
                 "INSERT INTO jobs(code,created_at,status,calc_id,formula,plan_json,notes) VALUES(?,?,?,?,?,?,?)",
                 (code, _now(), "planned", calc_id, formula, json.dumps(plan, sort_keys=True, ensure_ascii=False), notes))

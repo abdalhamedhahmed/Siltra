@@ -429,12 +429,6 @@ class SlitraController(QObject):
             QMessageBox.warning(self.window, "No Data", "No calculation results to export")
             return
 
-        filepath, _ = QFileDialog.getSaveFileName(
-            self.window, "Export Job Order", f"{APP_NAME}_JobOrder.pdf", "PDF Files (*.pdf)"
-        )
-        if not filepath:
-            return
-
         self.window.set_status("Exporting Job Order...")
         QApplication.processEvents()
 
@@ -533,6 +527,13 @@ class SlitraController(QObject):
             # Update TopBar with the new job number
             self.window.topbar.set_job(job_number)
             self.window.job_number_changed.emit(job_number)
+
+            # Suggest export filename as the job number (e.g. JO-2026-0001.pdf)
+            filepath, _ = QFileDialog.getSaveFileName(
+                self.window, "Export Job Order", f"{job_number}.pdf", "PDF Files (*.pdf)"
+            )
+            if not filepath:
+                return
 
             # Build report data with job number and order phase
             report_data = self._build_report_data(self.selected_index)
